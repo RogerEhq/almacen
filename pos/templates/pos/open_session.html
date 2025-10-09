@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Abrir Caja</title>
+</head>
+<body>
+    <h1>Apertura de Caja (Turno)</h1>
+    <p>Para comenzar a vender, debes declarar el fondo inicial de tu caja.</p>
+
+    <form method="post">
+        {% csrf_token %}
+        <label for="id_starting_balance">Fondo Inicial ($):</label>
+        <input type="number" id="id_starting_balance" name="starting_balance" step="0.01" value="0.00" required autofocus>
+
+        <button type="submit">Abrir Caja y Comenzar Venta</button>
+    </form>
+</body>
+</html>

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Punto de Venta</title>
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <style>
+        body { font-family: sans-serif; margin: 20px; }
+        .pos-container { display: flex; justify-content: space-between; }
+        .cart-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .cart-table th, .cart-table td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+        .checkout-controls { width: 30%; padding: 20px; border: 1px solid #eee; margin-left: 20px; }
+        .cart-area { width: 65%; }
+        .payment-select label { margin-right: 15px; }
+    </style>
+</head>
+<body>
+
+    <div class="pos-container">
+        <div class="cart-area">
+            <h1>Punto de Venta Simple</h1>
+            <p>Vendedor: <b>{{ user.username }}</b>
+                | Caja Abierta:
+                {% if active_session %}
+                    ${{ active_session.starting_balance|floatformat:2 }}
+                {% else %}
+                    <span style="color: red;">No activa</span>
+                {% endif %}
+                |
+
+                <a href="{% url 'close_session' %}" {% if not active_session %}style="pointer-events: none; color: gray;"{% endif %}>
+                    Cerrar Caja
+                </a>
+                |
+
+                <form style="display:inline;" method="post" action="{% url 'logout' %}">
+                    {% csrf_token %}
+                    <button type="submit" style="background: none; border: none; color: blue; cursor: pointer; padding: 0; font-family: sans-serif; font-size: 1em;">
+                        Cerrar Sesión
+                    </button>
+                </form>
+            </p>
+
+            <div id="product-search">
+                <h2>Añadir Producto</h2>
+                <input
+                    type="text"
+                    name="sku"
+                    placeholder="Introduce SKU y presiona Enter"
+                    autofocus
+                    hx-post="{% url 'add_product' %}"
+                    hx-trigger="keyup[key=='Enter']"
+                    hx-target="#product-details"
+                    hx-swap="innerHTML"
+                    value=""
+                    id="sku-input"
+                    data-hx-url="{% url 'add_product' %}"
+                    {% if not active_session %}disabled{% endif %}
+                >
+            </div>
+
+            <div id="product-details"></div>
+
+            <div id="cart-section">
+                <h2>Detalle de Venta</h2>
+                <table class="cart-table">
+                    <thead>
+                        <tr>
+                            <th>SKU</th>
+                            <th>Nombre</th>
+                            <th>Precio Unitario</th>
+                            <th>Cantidad</th>
+                            <th>Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cart-body">
+                        {% for item in cart_items %}
+                            {% include 'pos/product_row.html' %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <h3 id="total-area">Total: ${{ cart_total|floatformat:2 }}</h3>
+            </div>
+        </div>
+
+        <div class="checkout-controls">
+            <h3>Finalizar Venta</h3>
+            <form method="post" action="{% url 'checkout' %}">
+                {% csrf_token %}
+                <h4>Método de Pago (HU #5):</h4>
+                <div class="payment-select">
+                    <label>
+                        <input type="radio" name="payment_method" value="cash" checked> Efectivo
+                    </label>
+                    <label>
+                        <input type="radio" name="payment_method" value="card"> Tarjeta
+                    </label>
+                </div>
+                <br>
+                <button type="submit" {% if not cart_items or not active_session %}disabled{% endif %}>Finalizar Venta</button>
+            </form>
+        </div>
+    </div>
+
+<script>
+    // Añadir el token CSRF a cada solicitud HTMX
+    document.body.addEventListener('htmx:configRequest', function(event) {
+        const token = document.querySelector('meta[name="csrf-token"]').content;
+        if (token) {
+            event.detail.headers['X-CSRFToken'] = token;
+        }
+    });
+
+    // Limpiar y enfocar el campo SKU después de enviar
+    document.body.addEventListener('htmx:afterRequest', function(evt) {
+        const skuInput = document.getElementById('sku-input');
+        const expectedPath = skuInput.dataset.hxUrl;
+        if (evt.detail.requestConfig.path === expectedPath) {
+            skuInput.value = '';
+            skuInput.focus();
+        }
+    });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Cierre de Caja</title>
+</head>
+<body>
+    <h1>Cierre de Caja del Turno</h1>
+    <p>Cajero: <b>{{ session.user.username }}</b> | Apertura: {{ session.start_time|date:"d M Y H:i" }}</p>
+
+    <div>
+        <h2>Resumen Financiero</h2>
+        <div>Fondo Inicial: <span><b>${{ session.starting_balance|floatformat:2 }}</b></span></div>
+        <div>+ Total Ventas en Efectivo: <span><b>${{ cash_sales|floatformat:2 }}</b></span></div>
+        <hr>
+        <div>Total Esperado en Efectivo: <span><b>${{ expected_balance|floatformat:2 }}</b></span></div>
+        <hr>
+        <div>Total Ventas con Tarjeta (Referencia): <span>${{ card_sales|floatformat:2 }}</span></div>
+    </div>
+
+    <h2>Confirmación de Cierre</h2>
+    <form method="post">
+        {% csrf_token %}
+        <label for="ending_balance">Monto Contado Físicamente ($):</label>
+        <input type="number" id="ending_balance" name="ending_balance" step="0.01" value="{{ expected_balance|floatformat:2 }}" required>
+
+        <label for="notes">Notas de Cierre (Opcional):</label>
+        <textarea id="notes" name="notes" rows="3"></textarea>
+
+        <button type="submit">Finalizar Turno y Cerrar Sesión</button>
+    </form>
+</body>
+</html>
