@@ -13,6 +13,7 @@
         .checkout-controls { width: 30%; padding: 20px; border: 1px solid #eee; margin-left: 20px; }
         .cart-area { width: 65%; }
         .payment-select label { margin-right: 15px; }
+        .success-message { background: #e6ffe6; border: 1px solid #b2d8b2; padding: 10px; margin-top: 15px; }
     </style>
 </head>
 <body>
@@ -23,7 +24,7 @@
         <p>Vendedor: <b>{{ user.username }}</b>
             | Caja Abierta:
             {% if active_session %}
-                ${{ active_session.starting_balance|floatformat:2 }}
+                <span id="cash-balance">${{ active_session.starting_balance|floatformat:2 }}</span>
             {% else %}
                 <span style="color: red;">No activa</span>
             {% endif %}
@@ -57,7 +58,7 @@
                 id="sku-input"
                 data-hx-url="{% url 'add_product' %}"
                 {% if not active_session %}disabled{% endif %}
-            >
+            />
         </div>
 
         <!-- Trigger oculto para actualizar el total -->
@@ -93,7 +94,12 @@
 
     <div class="checkout-controls">
         <h3>Finalizar Venta</h3>
-        <form method="post" action="{% url 'checkout' %}">
+        <form
+            hx-post="{% url 'checkout' %}"
+            hx-target="#confirmation-area"
+            hx-swap="innerHTML"
+            id="checkout-form"
+        >
             {% csrf_token %}
             <h4>Método de Pago (HU #5):</h4>
             <div class="payment-select">
@@ -105,8 +111,9 @@
                 </label>
             </div>
             <br>
-            <button type="submit" {% if not cart_items or not active_session %}disabled{% endif %}>Finalizar Venta</button>
+            <button type="submit">Finalizar Venta</button>
         </form>
+        <div id="confirmation-area"></div>
     </div>
 </div>
 
@@ -126,6 +133,14 @@
         if (evt.detail.requestConfig.path === expectedPath) {
             skuInput.value = '';
             skuInput.focus();
+        }
+    });
+
+    // Limpiar carrito visualmente después de venta
+    document.body.addEventListener('htmx:afterOnLoad', function(evt) {
+        if (evt.detail.target.id === 'confirmation-area') {
+            document.getElementById('cart-body').innerHTML = '';
+            document.getElementById('total-area').innerHTML = 'Total: $0.00';
         }
     });
 </script>

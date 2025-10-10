@@ -1,0 +1,4 @@
+{% include 'pos/product_row.html' with item=item %}
+<script>
+    document.getElementById("total-area").innerHTML = "Total: ${{ cart_total|floatformat:2 }}";
+</script>

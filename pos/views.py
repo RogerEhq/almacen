@@ -102,7 +102,7 @@ def pos_view(request):
 @login_required
 @require_POST
 def add_product_view(request):
-    """Lógica HTMX: Añadir/incrementar producto con validación de Stock."""
+    """Lógica HTMX: Añadir/incrementar producto con validación de Stock y actualizar total."""
     sku = request.POST.get('sku', '').strip()
 
     try:
@@ -138,8 +138,13 @@ def add_product_view(request):
     request.session['cart'] = cart
     request.session.modified = True
 
-    context = {'item': cart[product_id]}
-    return render(request, 'pos/product_row.html', context)
+    cart_total = sum(item['subtotal'] for item in cart.values())
+    context = {
+        'item': cart[product_id],
+        'cart_total': cart_total
+    }
+
+    return render(request, 'pos/cart_row_and_total.html', context)
 
 
 # --- Finalizar venta ---
@@ -147,16 +152,15 @@ def add_product_view(request):
 @require_POST
 @transaction.atomic
 def checkout_view(request):
-    """Finaliza la venta, reduce stock y registra método de pago."""
     cart = request.session.get('cart', {})
     payment_method = request.POST.get('payment_method', 'cash')
 
     if not cart:
-        return redirect('pos_main')
+        return HttpResponse('<p style="color:red;">No hay productos en el carrito.</p>')
 
     active_session = CashDrawerSession.objects.filter(user=request.user, end_time__isnull=True).first()
     if not active_session:
-        return redirect('open_session')
+        return HttpResponse('<p style="color:red;">No hay sesión de caja activa.</p>')
 
     try:
         sale_items_to_create = []
@@ -169,7 +173,7 @@ def checkout_view(request):
             product = Product.objects.select_for_update().get(pk=product_id)
 
             if quantity_sold > product.stock:
-                raise Exception(f"Stock insuficiente para {product.name}.")
+                return HttpResponse(f'<p style="color:red;">Stock insuficiente para {escape(product.name)}.</p>')
 
             product.stock -= quantity_sold
             product.save()
@@ -202,13 +206,34 @@ def checkout_view(request):
             ) for item in sale_items_to_create
         ])
 
+        # Actualizar el balance de caja si el pago fue en efectivo
+        if payment_method == 'cash':
+            active_session.starting_balance += cart_total
+            active_session.save()
+
         del request.session['cart']
         request.session.modified = True
 
-    except Exception:
-        return redirect('pos_main')
+    except Exception as e:
+        return HttpResponse(f'<p style="color:red;">Error al finalizar la venta: {escape(str(e))}</p>')
 
-    return redirect('pos_main')
+    return HttpResponse(f"""
+        <div class="success-message">
+            ✅ Venta completada con éxito.<br>
+            Total vendido: <b>${cart_total:.2f}</b><br>
+            Método de pago: <b>{payment_method.title()}</b>
+        </div>
+        <script>
+            const method = "{payment_method}";
+            const total = {float(cart_total)};
+            const balanceEl = document.getElementById("cash-balance");
+            if (method === "cash" && balanceEl) {{
+                const current = parseFloat(balanceEl.textContent.replace('$', ''));
+                const updated = current + total;
+                balanceEl.textContent = "$" + updated.toFixed(2);
+            }}
+        </script>
+    """)
 
 @login_required
 def get_cart_total_view(request):
