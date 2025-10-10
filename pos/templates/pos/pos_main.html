@@ -17,91 +17,98 @@
 </head>
 <body>
 
-    <div class="pos-container">
-        <div class="cart-area">
-            <h1>Punto de Venta Simple</h1>
-            <p>Vendedor: <b>{{ user.username }}</b>
-                | Caja Abierta:
-                {% if active_session %}
-                    ${{ active_session.starting_balance|floatformat:2 }}
-                {% else %}
-                    <span style="color: red;">No activa</span>
-                {% endif %}
-                |
+<div class="pos-container">
+    <div class="cart-area">
+        <h1>Punto de Venta Simple</h1>
+        <p>Vendedor: <b>{{ user.username }}</b>
+            | Caja Abierta:
+            {% if active_session %}
+                ${{ active_session.starting_balance|floatformat:2 }}
+            {% else %}
+                <span style="color: red;">No activa</span>
+            {% endif %}
+            |
 
-                <a href="{% url 'close_session' %}" {% if not active_session %}style="pointer-events: none; color: gray;"{% endif %}>
-                    Cerrar Caja
-                </a>
-                |
+            <a href="{% url 'close_session' %}" {% if not active_session %}style="pointer-events: none; color: gray;"{% endif %}>
+                Cerrar Caja
+            </a>
+            |
 
-                <form style="display:inline;" method="post" action="{% url 'logout' %}">
-                    {% csrf_token %}
-                    <button type="submit" style="background: none; border: none; color: blue; cursor: pointer; padding: 0; font-family: sans-serif; font-size: 1em;">
-                        Cerrar Sesión
-                    </button>
-                </form>
-            </p>
+            <form style="display:inline;" method="post" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button type="submit" style="background: none; border: none; color: blue; cursor: pointer; padding: 0; font-family: sans-serif; font-size: 1em;">
+                    Cerrar Sesión
+                </button>
+            </form>
+        </p>
 
-            <div id="product-search">
-                <h2>Añadir Producto</h2>
-                <input
-                    type="text"
-                    name="sku"
-                    placeholder="Introduce SKU y presiona Enter"
-                    autofocus
-                    hx-post="{% url 'add_product' %}"
-                    hx-trigger="keyup[key=='Enter']"
-                    hx-target="#product-details"
-                    hx-swap="innerHTML"
-                    value=""
-                    id="sku-input"
-                    data-hx-url="{% url 'add_product' %}"
-                    {% if not active_session %}disabled{% endif %}
-                >
-            </div>
-
-            <div id="product-details"></div>
-
-            <div id="cart-section">
-                <h2>Detalle de Venta</h2>
-                <table class="cart-table">
-                    <thead>
-                        <tr>
-                            <th>SKU</th>
-                            <th>Nombre</th>
-                            <th>Precio Unitario</th>
-                            <th>Cantidad</th>
-                            <th>Subtotal</th>
-                        </tr>
-                    </thead>
-                    <tbody id="cart-body">
-                        {% for item in cart_items %}
-                            {% include 'pos/product_row.html' %}
-                        {% endfor %}
-                    </tbody>
-                </table>
-                <h3 id="total-area">Total: ${{ cart_total|floatformat:2 }}</h3>
-            </div>
+        <div id="product-search">
+            <h2>Añadir Producto</h2>
+            <input
+                type="text"
+                name="sku"
+                placeholder="Introduce SKU y presiona Enter"
+                autofocus
+                hx-post="{% url 'add_product' %}"
+                hx-trigger="keyup[key=='Enter']"
+                hx-target="#cart-body"
+                hx-swap="beforeend"
+                value=""
+                id="sku-input"
+                data-hx-url="{% url 'add_product' %}"
+                {% if not active_session %}disabled{% endif %}
+            >
         </div>
 
-        <div class="checkout-controls">
-            <h3>Finalizar Venta</h3>
-            <form method="post" action="{% url 'checkout' %}">
-                {% csrf_token %}
-                <h4>Método de Pago (HU #5):</h4>
-                <div class="payment-select">
-                    <label>
-                        <input type="radio" name="payment_method" value="cash" checked> Efectivo
-                    </label>
-                    <label>
-                        <input type="radio" name="payment_method" value="card"> Tarjeta
-                    </label>
-                </div>
-                <br>
-                <button type="submit" {% if not cart_items or not active_session %}disabled{% endif %}>Finalizar Venta</button>
-            </form>
+        <!-- Trigger oculto para actualizar el total -->
+        <div
+            hx-post="{% url 'update_total' %}"
+            hx-trigger="htmx:afterOnLoad from:#sku-input"
+            hx-target="#total-area"
+            hx-swap="outerHTML"
+            style="display:none;"
+        ></div>
+
+        <div id="cart-section">
+            <h2>Detalle de Venta</h2>
+            <table class="cart-table">
+                <thead>
+                    <tr>
+                        <th>SKU</th>
+                        <th>Nombre</th>
+                        <th>Precio Unitario</th>
+                        <th>Cantidad</th>
+                        <th>Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody id="cart-body">
+                    {% for item in cart_items %}
+                        {% include 'pos/product_row.html' %}
+                    {% endfor %}
+                </tbody>
+            </table>
+            <h3 id="total-area">Total: ${{ cart_total|floatformat:2 }}</h3>
         </div>
     </div>
+
+    <div class="checkout-controls">
+        <h3>Finalizar Venta</h3>
+        <form method="post" action="{% url 'checkout' %}">
+            {% csrf_token %}
+            <h4>Método de Pago (HU #5):</h4>
+            <div class="payment-select">
+                <label>
+                    <input type="radio" name="payment_method" value="cash" checked> Efectivo
+                </label>
+                <label>
+                    <input type="radio" name="payment_method" value="card"> Tarjeta
+                </label>
+            </div>
+            <br>
+            <button type="submit" {% if not cart_items or not active_session %}disabled{% endif %}>Finalizar Venta</button>
+        </form>
+    </div>
+</div>
 
 <script>
     // Añadir el token CSRF a cada solicitud HTMX

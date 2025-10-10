@@ -1,4 +1,3 @@
-# pos/views.py
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views.decorators.http import require_POST
@@ -210,3 +209,13 @@ def checkout_view(request):
         return redirect('pos_main')
 
     return redirect('pos_main')
+
+@login_required
+def get_cart_total_view(request):
+    """Calcula el total del carrito y devuelve solo el fragmento del total para HTMX."""
+    cart_items = request.session.get('cart', {})
+    cart_total = sum(item['subtotal'] for item in cart_items.values())
+
+    context = {'cart_total': cart_total}
+    # Renderiza un fragmento HTML con el nuevo total
+    return render(request, 'pos/total_fragment.html', context)

@@ -13,6 +13,7 @@ urlpatterns = [
     path('checkout/', views.checkout_view, name='checkout'),
     path('inicio/', views.redirect_after_login, name='redirect_after_login'),
     path('add-product/', views.add_product_view, name='add_product'),
+    path('get-total-htmx/', views.get_cart_total_view, name='update_total'),
 
 
 ]
