@@ -1,9 +1,6 @@
-# pos/models.py
 from django.db import models
 from django.contrib.auth.models import User
 from django.conf import settings
-
-
 # Sprint 2: Modelos de Soporte
 class Category(models.Model):
     name = models.CharField(max_length=100, verbose_name="Nombre")
@@ -45,10 +42,12 @@ class CashDrawerSession(models.Model):
         return f"Sesión {self.id} de {self.user.username}"
 
 
-# Sprint 3: Modelo Venta Modificado
+# Sprint 3: Modelo Venta
 class Sale(models.Model):
+    # Usamos 'sale_date' como campo principal, que en el error anterior era 'fecha_de_venta'
     sale_date = models.DateTimeField(auto_now_add=True)
     total_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    # Si estás usando la configuración estándar de Django, 'User' es correcto.
     seller = models.ForeignKey(User, on_delete=models.CASCADE)
 
     # Vínculo a la Sesión de Caja (HU #6)
@@ -69,11 +68,15 @@ class Sale(models.Model):
 
 # Sprint 1: Modelo Ítem de Venta
 class SaleItem(models.Model):
-    sale = models.ForeignKey(Sale, related_name='items', on_delete=models.CASCADE)
+    # 🎯 CORRECCIÓN CLAVE: Usamos la cadena 'Sale' para evitar el error E300.
+    sale = models.ForeignKey('Sale', related_name='items', on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     quantity = models.IntegerField(default=1)
     unit_price = models.DecimalField(max_digits=10, decimal_places=2)
     subtotal = models.DecimalField(max_digits=10, decimal_places=2)
+
+    # Campo para guardar el nombre del producto en el momento de la venta (para reportes)
+    product_name = models.CharField(max_length=200, default='N/A')
 
     def __str__(self):
         return f"{self.quantity} x {self.product.name}"

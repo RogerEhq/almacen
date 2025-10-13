@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard | Administración{% endblock %}
+
+{% block content %}
+<div>
+    <h1>Dashboard de Administración</h1>
+
+    <h2>Métricas del Día (Hoy)</h2>
+
+    <div class="metrics-grid">
+
+        <div class="metric-card">
+            <h3>Ventas Totales Hoy</h3>
+            <p>${{ ventas_hoy|floatformat:2 }}</p>
+        </div>
+
+        <div class="metric-card">
+            <h3>Transacciones Hoy</h3>
+            <p>{{ transacciones_hoy }}</p>
+        </div>
+
+        <div class="metric-card">
+            <h3>Ticket Promedio</h3>
+            <p>${{ ticket_promedio|floatformat:2 }}</p>
+        </div>
+
+        <div class="metric-card">
+            <h3>Sesiones de Caja Activas</h3>
+            <p>{{ sesiones_activas }}</p>
+        </div>
+    </div>
+
+    <div class="top-products-section">
+        <h2>Top 5 Productos Más Vendidos (Histórico)</h2>
+
+        <table style="width: 50%;">
+            <thead>
+                <tr>
+                    <th>Producto</th>
+                    <th style="text-align: right;">Cantidad Vendida</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in top_products %}
+                <tr>
+                    <td>{{ product.product_name }}</td>
+                    <td style="text-align: right;">{{ product.total_sold }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="2">No hay datos de ventas aún.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

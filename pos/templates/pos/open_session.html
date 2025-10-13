@@ -1,19 +1,118 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Abrir Caja</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POS | Abrir Caja</title>
+
+    <style>
+        /* BASE GENERAL */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f0f3f8; /* Mismo fondo que base.html */
+            color: #333;
+        }
+
+        /* CONTENEDOR DEL FORMULARIO */
+        .session-container {
+            width: 100%;
+            max-width: 450px;
+            padding: 40px;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+            text-align: center;
+        }
+
+        /* TÍTULOS Y DESCRIPCIÓN */
+        h1 {
+            color: #1e40af; /* Azul oscuro */
+            margin-bottom: 5px;
+            font-size: 2em;
+        }
+        p {
+            color: #6c757d;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        /* ETIQUETA Y CAMPO DE INPUT */
+        label {
+            display: block;
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #343a40;
+            margin-bottom: 10px;
+            text-align: left;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 1.8em; /* Tamaño grande para el monto */
+            text-align: right;
+            font-weight: bold;
+            color: #28a745; /* Fondo inicial en verde */
+            margin-bottom: 30px;
+            transition: border-color 0.2s;
+        }
+
+        input[type="number"]:focus {
+            border-color: #1e40af;
+            outline: none;
+            box-shadow: 0 0 0 0.2rem rgba(30, 64, 175, 0.25);
+        }
+
+        /* BOTÓN DE ACCIÓN */
+        button[type="submit"] {
+            width: 100%;
+            padding: 15px;
+            background-color: #28a745; /* Verde de éxito */
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1.2em;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        button[type="submit"]:hover {
+            background-color: #1e7e34;
+            transform: translateY(-2px);
+        }
+    </style>
 </head>
 <body>
-    <h1>Apertura de Caja (Turno)</h1>
-    <p>Para comenzar a vender, debes declarar el fondo inicial de tu caja.</p>
+    <div class="session-container">
+        <h1>Apertura de Caja (Turno)</h1>
+        <p>Para comenzar a vender, debes declarar el fondo inicial (cambio) de tu caja.</p>
 
-    <form method="post">
-        {% csrf_token %}
-        <label for="id_starting_balance">Fondo Inicial ($):</label>
-        <input type="number" id="id_starting_balance" name="starting_balance" step="0.01" value="0.00" required autofocus>
+        <form method="post">
+            {% csrf_token %}
+            <label for="id_starting_balance">Fondo Inicial ($):</label>
+            <input
+                type="number"
+                id="id_starting_balance"
+                name="starting_balance"
+                step="0.01"
+                value="0.00"
+                required
+                autofocus
+                placeholder="Ej: 50.00"
+            >
 
-        <button type="submit">Abrir Caja y Comenzar Venta</button>
-    </form>
+            <button type="submit">Abrir Caja y Comenzar Venta</button>
+        </form>
+    </div>
 </body>
 </html>

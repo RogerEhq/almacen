@@ -1,16 +1,18 @@
 # ferrepos/urls.py
 from django.contrib import admin
 from django.urls import path, include
-from pos.views import pos_view
+# 🎯 CAMBIO: Importamos la nueva vista de despacho en lugar de pos_view
+from pos.views import home_dispatch_view
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    # Rutas de Autenticación
+    # Rutas de Autenticación (incluye login/logout)
     path('accounts/', include('django.contrib.auth.urls')),
 
     # Rutas de la App POS
     path('pos/', include('pos.urls')),
 
-    # Redirección de la raíz al POS después del login
-    path('', pos_view, name='home'),
+    # 🎯 Sprint 4: Redirección de la raíz usando la vista de despacho (HU #14)
+    # Esta vista redirige automáticamente a 'dashboard' o 'pos_main' según el rol.
+    path('', home_dispatch_view, name='home'),
 ]

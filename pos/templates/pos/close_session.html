@@ -1,33 +1,163 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Cierre de Caja</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POS | Cierre de Caja</title>
+
+    <style>
+        /* Base y Centrado */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f0f3f8;
+            color: #333;
+        }
+
+        /* Contenedor principal */
+        .close-session-container {
+            width: 100%;
+            max-width: 550px;
+            padding: 40px;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Títulos */
+        h1 {
+            color: #1e40af;
+            margin-bottom: 5px;
+            font-size: 2em;
+            border-bottom: 3px solid #e6e9f5;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #495057;
+            margin-top: 25px;
+            border-left: 5px solid #007bff;
+            padding-left: 10px;
+            font-size: 1.4em;
+        }
+
+        /* Resumen Financiero */
+        .financial-summary {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            line-height: 1.8;
+        }
+        .financial-summary div {
+            display: flex;
+            justify-content: space-between;
+            font-size: 1.1em;
+            padding: 5px 0;
+        }
+        .financial-summary hr {
+            border: 0;
+            border-top: 1px dashed #ced4da;
+            margin: 10px 0;
+        }
+        /* Color especial para el total esperado */
+        .expected-total span b {
+            color: #28a745; /* Verde */
+            font-size: 1.2em;
+        }
+
+        /* Campos de formulario */
+        label {
+            display: block;
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #343a40;
+            margin-top: 20px;
+            margin-bottom: 8px;
+            text-align: left;
+        }
+
+        input[type="number"], textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 1.2em;
+            transition: border-color 0.2s;
+        }
+
+        input[type="number"] {
+            font-weight: bold;
+            text-align: right;
+            color: #dc3545; /* Monto contado en rojo para énfasis */
+        }
+
+        input[type="number"]:focus, textarea:focus {
+            border-color: #1e40af;
+            outline: none;
+        }
+
+        /* Botón de cierre */
+        button[type="submit"] {
+            width: 100%;
+            padding: 15px;
+            background-color: #dc3545; /* Rojo de advertencia/cierre */
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1.2em;
+            margin-top: 30px;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        button[type="submit"]:hover {
+            background-color: #c82333;
+            transform: translateY(-2px);
+        }
+    </style>
 </head>
 <body>
-    <h1>Cierre de Caja del Turno</h1>
-    <p>Cajero: <b>{{ session.user.username }}</b> | Apertura: {{ session.start_time|date:"d M Y H:i" }}</p>
+    <div class="close-session-container">
+        <h1>Cierre de Caja del Turno</h1>
+        <p>Cajero: <b>{{ session.user.username }}</b> | Apertura: **{{ session.start_time|date:"d M Y H:i" }}**</p>
 
-    <div>
-        <h2>Resumen Financiero</h2>
-        <div>Fondo Inicial: <span><b>${{ session.starting_balance|floatformat:2 }}</b></span></div>
-        <div>+ Total Ventas en Efectivo: <span><b>${{ cash_sales|floatformat:2 }}</b></span></div>
-        <hr>
-        <div>Total Esperado en Efectivo: <span><b>${{ expected_balance|floatformat:2 }}</b></span></div>
-        <hr>
-        <div>Total Ventas con Tarjeta (Referencia): <span>${{ card_sales|floatformat:2 }}</span></div>
+        <div class="financial-summary">
+            <h2>Resumen Financiero</h2>
+            <div>Fondo Inicial: <span><b>${{ session.starting_balance|floatformat:2 }}</b></span></div>
+            <div>+ Total Ventas en Efectivo: <span><b>${{ cash_sales|floatformat:2 }}</b></span></div>
+            <hr>
+            <div class="expected-total">Total Esperado en Efectivo: <span><b>${{ expected_balance|floatformat:2 }}</b></span></div>
+            <hr>
+            <div>Total Ventas con Tarjeta (Referencia): <span>${{ card_sales|floatformat:2 }}</span></div>
+        </div>
+
+        <h2>Confirmación de Cierre</h2>
+        <form method="post">
+            {% csrf_token %}
+
+            <label for="ending_balance">Monto Contado Físicamente ($):</label>
+            <input
+                type="number"
+                id="ending_balance"
+                name="ending_balance"
+                step="0.01"
+                value="{{ expected_balance|floatformat:2 }}"
+                required
+            >
+
+            <label for="notes">Notas de Cierre (Opcional):</label>
+            <textarea id="notes" name="notes" rows="3"></textarea>
+
+            <button type="submit">Finalizar Turno y Cerrar Sesión</button>
+        </form>
     </div>
-
-    <h2>Confirmación de Cierre</h2>
-    <form method="post">
-        {% csrf_token %}
-        <label for="ending_balance">Monto Contado Físicamente ($):</label>
-        <input type="number" id="ending_balance" name="ending_balance" step="0.01" value="{{ expected_balance|floatformat:2 }}" required>
-
-        <label for="notes">Notas de Cierre (Opcional):</label>
-        <textarea id="notes" name="notes" rows="3"></textarea>
-
-        <button type="submit">Finalizar Turno y Cerrar Sesión</button>
-    </form>
 </body>
 </html>

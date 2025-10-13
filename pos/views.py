@@ -1,9 +1,12 @@
-from django.contrib.auth.decorators import login_required
+import datetime
+from glob import escape
+from datetime import datetime
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views.decorators.http import require_POST
 from django.http import HttpResponse
 from django.db import transaction
-from django.db.models import Sum
+from django.db.models import Sum, Count, Q
 from django.utils import timezone
 from decimal import Decimal
 from django.contrib.auth import logout
@@ -244,3 +247,118 @@ def get_cart_total_view(request):
     context = {'cart_total': cart_total}
     # Renderiza un fragmento HTML con el nuevo total
     return render(request, 'pos/total_fragment.html', context)
+
+
+def is_admin_staff(user):
+    """Verifica si el usuario es administrador o superusuario."""
+    return user.is_staff or user.is_superuser
+
+
+# ----------------------------------------------------
+# B. Tarea 1: Despacho por Rol (HU #14)
+# ----------------------------------------------------
+
+@login_required
+def home_dispatch_view(request):
+    if is_admin_staff(request.user):
+        # 1. ADMIN: Va al dashboard
+        return redirect('dashboard')
+    else:
+        # 2. VENDEDOR: Chequeo de caja (Lógica del HU #11/Sprint 3)
+        active_session = CashDrawerSession.objects.filter(
+            user=request.user,
+            end_time__isnull=True
+        ).first()
+
+        if active_session:
+            # Sesión activa: va al POS
+            return redirect('pos_main')
+        else:
+            # Sesión inactiva: va a abrir caja
+            return redirect('open_session')
+
+    # ----------------------------------------------------
+
+
+# C. Tarea 2: Dashboard y Top Productos (HU #8 y #13)
+# ----------------------------------------------------
+
+@user_passes_test(is_admin_staff)
+@login_required
+def dashboard_view(request):
+    today = timezone.now().date()
+
+    # 🎯 CORRECCIÓN: Usar 'sale_date'
+    today_sales = Sale.objects.filter(sale_date__date=today)
+
+    today_metrics = today_sales.aggregate(
+        total_sales=Sum('total_amount'),
+        num_transactions=Count('id')
+    )
+
+    total_sales = today_metrics.get('total_sales') or 0.00
+    num_transactions = today_metrics.get('num_transactions') or 0
+    ticket_average = (total_sales / num_transactions) if num_transactions else 0.00
+
+    active_sessions = CashDrawerSession.objects.filter(end_time__isnull=True).count()
+
+    # Productos Más Vendidos (Top 5 histórico)
+    top_products = SaleItem.objects.values('product_name') \
+                       .annotate(total_sold=Sum('quantity')) \
+                       .order_by('-total_sold')[:5]
+
+    context = {
+        'ventas_hoy': total_sales,
+        'transacciones_hoy': num_transactions,
+        'ticket_promedio': ticket_average,
+        'sesiones_activas': active_sessions,
+        'top_products': top_products,
+    }
+
+    return render(request, 'pos/dashboard.html', context)
+
+@user_passes_test(is_admin_staff)
+@login_required
+def sales_report_view(request):
+    sales = None
+    totals = {}
+
+    if request.method == 'POST':
+        start_date_str = request.POST.get('start_date')
+        end_date_str = request.POST.get('end_date')
+
+        if start_date_str and end_date_str:
+            try:
+                start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+                end_date_inclusive = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+
+                # 🎯 CORRECCIÓN: Usar 'sale_date'
+                sales = Sale.objects.filter(
+                    sale_date__date__gte=start_date,
+                    sale_date__date__lte=end_date_inclusive
+                ).select_related('cash_drawer_session__user').order_by('-sale_date') # 🎯 Y en el ordenamiento
+
+                report_totals = sales.aggregate(
+                    total_sales=Sum('total_amount'),
+                    total_transactions=Count('id'),
+                    total_cash_sales=Sum('total_amount', filter=Q(payment_method='cash')),
+                    total_card_sales=Sum('total_amount', filter=Q(payment_method='card')),
+                )
+
+                totals = {
+                    'total_sales': report_totals.get('total_sales') or 0.00,
+                    'total_transactions': report_totals.get('total_transactions') or 0,
+                    'total_cash': report_totals.get('total_cash_sales') or 0.00,
+                    'total_card': report_totals.get('total_card_sales') or 0.00,
+                    'start_date': start_date_str,
+                    'end_date': end_date_str,
+                }
+
+            except ValueError:
+                pass
+
+    context = {
+        'sales': sales,
+        'totals': totals,
+    }
+    return render(request, 'pos/sales_report.html', context)
