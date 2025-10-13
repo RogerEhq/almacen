@@ -283,12 +283,15 @@ def home_dispatch_view(request):
 # C. Tarea 2: Dashboard y Top Productos (HU #8 y #13)
 # ----------------------------------------------------
 
+def is_admin_staff(user):
+    return user.is_staff or user.is_superuser
+
 @user_passes_test(is_admin_staff)
 @login_required
 def dashboard_view(request):
     today = timezone.now().date()
 
-    # 🎯 CORRECCIÓN: Usar 'sale_date'
+    # Filtramos las ventas para hoy (asumiendo que 'sale_date' es un campo DateTimeField o DateField)
     today_sales = Sale.objects.filter(sale_date__date=today)
 
     today_metrics = today_sales.aggregate(
@@ -296,14 +299,14 @@ def dashboard_view(request):
         num_transactions=Count('id')
     )
 
-    total_sales = today_metrics.get('total_sales') or 0.00
+    total_sales = today_metrics.get('total_sales') or Decimal('0.00')
     num_transactions = today_metrics.get('num_transactions') or 0
-    ticket_average = (total_sales / num_transactions) if num_transactions else 0.00
+    ticket_average = (total_sales / num_transactions) if num_transactions else Decimal('0.00')
 
     active_sessions = CashDrawerSession.objects.filter(end_time__isnull=True).count()
 
-    # Productos Más Vendidos (Top 5 histórico)
-    top_products = SaleItem.objects.values('product_name') \
+    # ✅ CORRECCIÓN FINAL (en la vista): Se elimina el alias product_name= para evitar el TypeError.
+    top_products = SaleItem.objects.values('product__name') \
                        .annotate(total_sold=Sum('quantity')) \
                        .order_by('-total_sold')[:5]
 

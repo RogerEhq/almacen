@@ -169,7 +169,7 @@
             <tbody>
                 {% for product in top_products %}
                 <tr>
-                    <td>{{ product.product_name }}</td>
+                    <td>{{ product.product__name }}</td>
                     <td style="text-align: right;">{{ product.total_sold }}</td>
                 </tr>
                 {% empty %}
