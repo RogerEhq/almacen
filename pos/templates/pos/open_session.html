@@ -7,7 +7,7 @@
     <title>POS | Abrir Caja</title>
 
     <style>
-        /* BASE GENERAL */
+        /* BASE GENERAL Y FONDO DINÁMICO */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
@@ -15,8 +15,15 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            background-color: #f0f3f8; /* Mismo fondo que base.html */
             color: #333;
+
+            /* Fondo Sutil y Profesional (ligeramente animado) */
+            background: linear-gradient(135deg, #f0f3f8 0%, #e6e9f5 100%);
+            animation: backgroundShift 15s ease infinite alternate;
+        }
+        @keyframes backgroundShift {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 100% 50%; }
         }
 
         /* CONTENEDOR DEL FORMULARIO */
@@ -25,70 +32,98 @@
             max-width: 450px;
             padding: 40px;
             background-color: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+            border-radius: 15px; /* Bordes más suaves */
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); /* Sombra más fuerte y elevada */
             text-align: center;
+            transition: transform 0.3s ease;
         }
+        .session-container:hover {
+            transform: translateY(-3px); /* Pequeño efecto 3D */
+        }
+
 
         /* TÍTULOS Y DESCRIPCIÓN */
         h1 {
             color: #1e40af; /* Azul oscuro */
             margin-bottom: 5px;
-            font-size: 2em;
+            font-size: 2.2em;
+            font-weight: 700;
+            border-bottom: 3px solid #e6e9f5;
+            padding-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
+
+        /* Icono de Caja (Simulado con Unicode) */
+        h1::before {
+            content: '💵';
+            margin-right: 10px;
+            font-size: 1.1em;
+        }
+
         p {
             color: #6c757d;
-            margin-bottom: 30px;
+            margin-bottom: 35px; /* Más espacio */
             font-size: 1.1em;
+            line-height: 1.4;
         }
 
         /* ETIQUETA Y CAMPO DE INPUT */
         label {
             display: block;
-            font-size: 1.2em;
-            font-weight: 600;
+            font-size: 1.3em; /* Más prominente */
+            font-weight: 700;
             color: #343a40;
-            margin-bottom: 10px;
-            text-align: left;
+            margin-bottom: 12px;
+            text-align: center; /* Centramos la etiqueta */
         }
 
         input[type="number"] {
             width: 100%;
-            padding: 15px;
-            border: 2px solid #ccc;
-            border-radius: 8px;
+            padding: 18px 15px; /* Más padding vertical */
+            border: 2px solid #b3d9ff; /* Borde inicial azul muy suave */
+            border-radius: 10px; /* Bordes más redondeados */
             box-sizing: border-box;
-            font-size: 1.8em; /* Tamaño grande para el monto */
-            text-align: right;
+            font-size: 2em; /* Tamaño grande para el monto */
+            text-align: center; /* Centramos el texto del monto */
             font-weight: bold;
-            color: #28a745; /* Fondo inicial en verde */
-            margin-bottom: 30px;
-            transition: border-color 0.2s;
+            color: #28a745;
+            margin-bottom: 40px; /* Más espacio antes del botón */
+            transition: all 0.3s ease; /* Transición a todos los cambios */
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
         }
 
         input[type="number"]:focus {
-            border-color: #1e40af;
+            border-color: #1e40af; /* Borde oscuro al enfocar */
             outline: none;
-            box-shadow: 0 0 0 0.2rem rgba(30, 64, 175, 0.25);
+            box-shadow: 0 0 10px rgba(30, 64, 175, 0.4); /* Sombra de enfoque */
         }
+
+        input[type="number"]::placeholder {
+             color: #ccc;
+        }
+
 
         /* BOTÓN DE ACCIÓN */
         button[type="submit"] {
             width: 100%;
-            padding: 15px;
-            background-color: #28a745; /* Verde de éxito */
+            padding: 18px; /* Más padding */
+            background-color: #28a745;
             color: white;
             border: none;
-            border-radius: 8px;
+            border-radius: 10px;
             cursor: pointer;
             font-weight: bold;
-            font-size: 1.2em;
-            transition: background-color 0.2s, transform 0.1s;
+            font-size: 1.3em; /* Texto más grande */
+            transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
+            text-transform: uppercase;
         }
 
         button[type="submit"]:hover {
             background-color: #1e7e34;
             transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(40, 167, 69, 0.4);
         }
     </style>
 </head>
@@ -99,7 +134,7 @@
 
         <form method="post">
             {% csrf_token %}
-            <label for="id_starting_balance">Fondo Inicial ($):</label>
+            <label for="id_starting_balance">Monto de Fondo Inicial ($):</label>
             <input
                 type="number"
                 id="id_starting_balance"

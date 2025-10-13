@@ -11,89 +11,114 @@
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
-            background-color: #f0f3f8; /* Gris muy claro */
+            background-color: #eef1f5; /* Gris muy claro y profesional */
             color: #333;
             line-height: 1.6;
+            min-height: 100vh;
         }
 
         /* LAYOUT PRINCIPAL */
         .container {
-            max-width: 1400px; /* Un poco más amplio para reportes */
+            max-width: 1400px;
             margin: 30px auto;
-            padding: 30px;
+            padding: 40px; /* Más padding interno */
             background-color: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border-radius: 16px; /* Bordes más redondeados */
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15); /* Sombra más pronunciada */
             min-height: 80vh;
         }
-        h1, h2, h3 {
-            color: #1e40af;
+
+        /* TÍTULOS */
+        h1 {
+            color: #1e40af; /* Azul primario */
+            font-weight: 700;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+        h2 {
+            color: #495057;
             font-weight: 600;
+            font-size: 1.8em;
+            margin-top: 30px;
+        }
+        h3 {
+             color: #1e40af;
+             font-weight: 600;
         }
 
-        /* NAVBAR (Mantenemos el estilo de administrador) */
+
+        /* NAVBAR */
         .navbar {
-            background-color: #1e40af; /* Azul oscuro */
-            padding: 15px 30px;
+            background-color: #1e40af; /* Azul oscuro corporativo */
+            padding: 18px 40px; /* Más padding vertical y horizontal */
             color: white;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
         }
+        .navbar .logo {
+            font-size: 2em;
+            font-weight: 900; /* Extra bold */
+            letter-spacing: 1px;
+        }
+
         .navbar a {
             color: white;
             text-decoration: none;
-            margin-left: 20px;
-            padding: 8px 12px;
-            border-radius: 6px;
-            transition: background-color 0.2s;
+            margin-left: 25px;
+            padding: 10px 15px;
+            border-radius: 8px;
+            transition: background-color 0.2s, color 0.2s;
             font-weight: 500;
         }
         .navbar a:hover {
             background-color: #3b82f6;
         }
-        .navbar .logo {
-            font-size: 1.8em;
-            font-weight: bold;
-        }
+
+        /* Botón de cerrar sesión (Invertido) */
         .navbar button {
-            /* Estilo del botón de cerrar sesión */
-            background: none;
-            border: 1px solid white;
+            background-color: #dc3545; /* Rojo de acción */
+            border: none;
             color: white;
             cursor: pointer;
-            padding: 8px 12px;
+            padding: 10px 15px;
             font-family: inherit;
             font-size: 1em;
-            margin-left: 10px;
-            border-radius: 6px;
+            margin-left: 15px;
+            border-radius: 8px;
+            font-weight: 600;
             transition: background-color 0.2s;
         }
         .navbar button:hover {
-            background-color: #3b82f6;
-            border-color: #3b82f6;
+            background-color: #c82333;
         }
+
 
         /* --- ESTILOS DE TABLAS (CRÍTICO PARA REPORTES) --- */
         table {
             width: 100%;
-            border-collapse: separate; /* Cambiado de collapse para border-radius */
+            border-collapse: separate;
             border-spacing: 0;
             margin-top: 20px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            border-radius: 8px; /* Bordes redondeados */
-            overflow: hidden; /* Asegura que el contenido se ajuste a los bordes */
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            border-radius: 10px;
+            overflow: hidden;
+            background-color: white;
         }
         table thead tr {
-            background-color: #e6e9f5; /* Tono más claro de azul */
-            color: #1e40af;
-            font-weight: 600;
+            background-color: #eef2ff; /* Fondo muy claro de marca */
         }
         table th, table td {
-            padding: 12px 15px;
+            padding: 15px 20px;
             text-align: left;
-            border-bottom: 1px solid #ddd;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        table th {
+            color: #1e40af;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.9em;
         }
         table tbody tr:last-child td {
             border-bottom: none;
@@ -104,81 +129,97 @@
 
         /* --- ESTILOS DE FORMULARIOS Y BOTONES --- */
         input[type="text"], input[type="number"], input[type="date"], select, textarea {
-            padding: 10px;
+            padding: 12px;
             border: 1px solid #ccc;
-            border-radius: 6px;
+            border-radius: 8px;
             margin-right: 15px;
-            transition: border-color 0.2s;
+            transition: border-color 0.2s, box-shadow 0.2s;
             font-size: 1em;
+            box-sizing: border-box;
         }
         input[type="text"]:focus, input[type="number"]:focus, input[type="date"]:focus, select:focus, textarea:focus {
             border-color: #1e40af;
+            box-shadow: 0 0 5px rgba(30, 64, 175, 0.3);
             outline: none;
         }
 
         button[type="submit"], .btn {
-            padding: 10px 20px;
-            background-color: #007bff; /* Azul primario */
+            padding: 12px 25px;
+            background-color: #007bff;
             color: white;
             border: none;
-            border-radius: 6px;
+            border-radius: 8px;
             cursor: pointer;
             font-weight: bold;
-            transition: background-color 0.2s, transform 0.1s;
+            transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
         }
         button[type="submit"]:hover, .btn:hover {
             background-color: #0056b3;
-            transform: translateY(-1px);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0, 123, 255, 0.3);
         }
+
+        /* Estilo para botones de acción secundaria (ej. Cancelar o Botón Neutro) */
+        .btn.secondary {
+            background-color: #6c757d;
+        }
+        .btn.secondary:hover {
+            background-color: #5a6268;
+        }
+
 
         /* ESTILOS DE MÉTRICAS (Dashboard) */
         .metrics-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 25px;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
             margin-bottom: 40px;
         }
         .metric-card {
-            padding: 25px;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            text-align: center;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            text-align: left; /* Alineado a la izquierda */
             background-color: white;
-            border-left: 5px solid;
-            transition: transform 0.2s;
+            border-left: 6px solid;
+            transition: transform 0.3s, box-shadow 0.3s;
         }
         .metric-card:hover {
-            transform: translateY(-3px);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
         }
         .metric-card h3 {
             font-size: 1.1em;
-            color: #666;
+            color: #6c757d;
             margin-top: 0;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 10px;
+            padding-bottom: 5px;
+            text-transform: uppercase;
+            font-weight: 600;
         }
         .metric-card p {
-            font-size: 3em;
-            font-weight: bold;
+            font-size: 3.5em;
+            font-weight: 800;
             margin: 5px 0 0;
+            line-height: 1;
         }
 
         /* Colores específicos para métricas */
-        .metric-card:nth-child(1) { border-left-color: #28a745; } /* Ventas - Verde */
+        .metric-card:nth-child(1) { border-left-color: #28a745; }
         .metric-card:nth-child(1) p { color: #28a745; }
-        .metric-card:nth-child(2) { border-left-color: #007bff; } /* Transacciones - Azul */
+        .metric-card:nth-child(2) { border-left-color: #007bff; }
         .metric-card:nth-child(2) p { color: #007bff; }
-        .metric-card:nth-child(3) { border-left-color: #ffc107; } /* Promedio - Amarillo */
+        .metric-card:nth-child(3) { border-left-color: #ffc107; }
         .metric-card:nth-child(3) p { color: #ffc107; }
-        .metric-card:nth-child(4) { border-left-color: #dc3545; } /* Sesiones - Rojo */
+        .metric-card:nth-child(4) { border-left-color: #dc3545; }
         .metric-card:nth-child(4) p { color: #dc3545; }
 
-        /* Estilo para mensajes de éxito/error (Reporte) */
+
+        /* Estilo para mensajes de éxito/error */
         .success-message, .error-message {
-            padding: 15px;
-            border-radius: 6px;
-            margin-top: 20px;
-            font-weight: bold;
+            padding: 18px;
+            border-radius: 8px;
+            margin-top: 25px;
+            font-weight: 600;
         }
         .success-message {
             background-color: #d4edda;

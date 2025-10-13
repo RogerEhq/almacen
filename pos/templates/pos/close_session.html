@@ -7,7 +7,7 @@
     <title>POS | Cierre de Caja</title>
 
     <style>
-        /* Base y Centrado */
+        /* Base y Centrado con Fondo Sutil */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
@@ -15,112 +15,166 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            background-color: #f0f3f8;
+            background: linear-gradient(135deg, #f0f3f8 0%, #e6e9f5 100%);
             color: #333;
         }
 
         /* Contenedor principal */
         .close-session-container {
             width: 100%;
-            max-width: 550px;
+            max-width: 600px; /* Un poco más ancho */
             padding: 40px;
             background-color: white;
-            border-radius: 12px;
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+            border-radius: 15px; /* Bordes más suaves */
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease;
         }
 
         /* Títulos */
         h1 {
             color: #1e40af;
             margin-bottom: 5px;
-            font-size: 2em;
-            border-bottom: 3px solid #e6e9f5;
-            padding-bottom: 10px;
+            font-size: 2.4em;
+            font-weight: 700;
+            border-bottom: 4px solid #e6e9f5;
+            padding-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
+        /* Icono para H1 */
+        h1::before {
+            content: '🚨'; /* Alerta/Acción crítica */
+            margin-right: 15px;
+            font-size: 1em;
+        }
+
         h2 {
             color: #495057;
-            margin-top: 25px;
-            border-left: 5px solid #007bff;
-            padding-left: 10px;
-            font-size: 1.4em;
+            margin-top: 30px;
+            border-left: 5px solid #ffc107; /* Amarillo para auditoría */
+            padding-left: 15px;
+            font-size: 1.6em;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        /* Información de sesión */
+        .close-session-container p {
+            font-size: 1em;
+            color: #6c757d;
+            border-bottom: 1px dashed #eee;
+            padding-bottom: 15px;
+            margin-bottom: 30px;
         }
 
         /* Resumen Financiero */
         .financial-summary {
             background-color: #f8f9fa;
             border: 1px solid #dee2e6;
-            padding: 20px;
-            border-radius: 8px;
+            padding: 25px;
+            border-radius: 10px;
             margin-bottom: 30px;
-            line-height: 1.8;
+            line-height: 2;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
         }
         .financial-summary div {
             display: flex;
             justify-content: space-between;
-            font-size: 1.1em;
+            font-size: 1.2em; /* Más grande */
             padding: 5px 0;
+            font-weight: 500;
+        }
+        .financial-summary div span b {
+            font-weight: 700;
         }
         .financial-summary hr {
             border: 0;
-            border-top: 1px dashed #ced4da;
-            margin: 10px 0;
+            border-top: 2px solid #e9ecef; /* Línea más gruesa */
+            margin: 15px 0;
         }
-        /* Color especial para el total esperado */
+        /* Color especial y tamaño para el total esperado */
+        .expected-total {
+            background-color: #e6f7ef; /* Fondo verde claro */
+            padding: 10px 0;
+            border-radius: 5px;
+        }
         .expected-total span b {
-            color: #28a745; /* Verde */
-            font-size: 1.2em;
+            color: #1e7e34; /* Verde oscuro */
+            font-size: 1.5em; /* Muy grande */
         }
+        .expected-total {
+            font-weight: 600;
+        }
+
 
         /* Campos de formulario */
         label {
             display: block;
-            font-size: 1.1em;
-            font-weight: 600;
+            font-size: 1.3em; /* Más prominente */
+            font-weight: 700;
             color: #343a40;
-            margin-top: 20px;
-            margin-bottom: 8px;
+            margin-top: 25px;
+            margin-bottom: 10px;
             text-align: left;
         }
 
-        input[type="number"], textarea {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #ccc;
-            border-radius: 8px;
-            box-sizing: border-box;
-            font-size: 1.2em;
-            transition: border-color 0.2s;
-        }
-
         input[type="number"] {
+            width: 100%;
+            padding: 18px; /* Más padding */
+            border: 2px solid #ff7777; /* Borde rojo */
+            border-radius: 10px;
+            box-sizing: border-box;
+            font-size: 2em; /* Muy grande */
             font-weight: bold;
             text-align: right;
-            color: #dc3545; /* Monto contado en rojo para énfasis */
+            color: #dc3545; /* Monto contado en rojo */
+            transition: all 0.3s ease;
         }
 
-        input[type="number"]:focus, textarea:focus {
+        input[type="number"]:focus {
+            border-color: #c82333;
+            box-shadow: 0 0 10px rgba(220, 53, 69, 0.4);
+            outline: none;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 1.1em;
+            transition: border-color 0.2s;
+            resize: vertical;
+        }
+
+        textarea:focus {
             border-color: #1e40af;
             outline: none;
+            box-shadow: 0 0 5px rgba(30, 64, 175, 0.2);
         }
 
         /* Botón de cierre */
         button[type="submit"] {
             width: 100%;
-            padding: 15px;
-            background-color: #dc3545; /* Rojo de advertencia/cierre */
+            padding: 20px; /* Más grande */
+            background-color: #dc3545; /* Rojo de cierre final */
             color: white;
             border: none;
-            border-radius: 8px;
+            border-radius: 10px;
             cursor: pointer;
             font-weight: bold;
-            font-size: 1.2em;
-            margin-top: 30px;
-            transition: background-color 0.2s, transform 0.1s;
+            font-size: 1.3em;
+            margin-top: 40px; /* Más margen */
+            transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
+            text-transform: uppercase;
         }
 
         button[type="submit"]:hover {
-            background-color: #c82333;
-            transform: translateY(-2px);
+            background-color: #b02a37;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(220, 53, 69, 0.4);
         }
     </style>
 </head>
@@ -154,7 +208,7 @@
             >
 
             <label for="notes">Notas de Cierre (Opcional):</label>
-            <textarea id="notes" name="notes" rows="3"></textarea>
+            <textarea id="notes" name="notes" rows="3" placeholder="Detalles sobre diferencias, transacciones grandes, o cualquier incidencia."></textarea>
 
             <button type="submit">Finalizar Turno y Cerrar Sesión</button>
         </form>

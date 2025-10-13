@@ -3,66 +3,79 @@
 {% block title %}Reporte de Ventas{% endblock %}
 
 {% block content %}
-<div class="container">
-    <h1>Reporte de Ventas Detallado</h1>
+<div class="container" style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #343a40;">
+    <h1 style="margin-bottom: 20px; font-size: 2rem; border-bottom: 2px solid #007bff; padding-bottom: 10px;">📊 Reporte de Ventas Detallado</h1>
 
-    <form method="POST" style="margin-bottom: 30px; padding: 20px; border: 1px solid #ccc; border-radius: 8px; background-color: #f8f9fa;">
+    <form method="POST" style="margin-bottom: 30px; padding: 25px; border: 1px solid #dee2e6; border-radius: 10px; background-color: #f1f3f5; box-shadow: 0 2px 6px rgba(0,0,0,0.05);">
         {% csrf_token %}
-        <label for="start_date" style="font-weight: bold;">Fecha de Inicio:</label>
-        <input type="date" id="start_date" name="start_date" required style="padding: 8px; margin-right: 20px; border-radius: 4px; border: 1px solid #ccc;" value="{{ totals.start_date }}">
-        
-        <label for="end_date" style="font-weight: bold;">Fecha de Fin:</label>
-        <input type="date" id="end_date" name="end_date" required style="padding: 8px; margin-right: 20px; border-radius: 4px; border: 1px solid #ccc;" value="{{ totals.end_date }}">
-        
-        <button type="submit" style="padding: 10px 20px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; transition: background-color 0.3s;">
-            Generar Reporte
-        </button>
-    </form>
-    
-    {% if sales %}
-    <h2 style="color: #495057;">Resultados del Periodo Seleccionado</h2>
+        <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: center;">
+            <div>
+                <label for="start_date" style="font-weight: 600;">📅 Fecha de Inicio:</label><br>
+                <input type="date" id="start_date" name="start_date" required style="padding: 10px; border-radius: 6px; border: 1px solid #ced4da; background-color: #fff;" value="{{ totals.start_date }}">
+            </div>
 
-    <div class="summary-metrics" style="display: flex; gap: 20px; margin-bottom: 30px;">
-        <div style="padding: 15px; border: 1px solid #28a745; border-left: 5px solid #28a745; border-radius: 5px; flex: 1;">
-            <strong>Ventas Totales (Neto):</strong> <span style="font-size: 1.2em; color: #28a745;">${{ totals.total_sales|floatformat:2 }}</span>
+            <div>
+                <label for="end_date" style="font-weight: 600;">📅 Fecha de Fin:</label><br>
+                <input type="date" id="end_date" name="end_date" required style="padding: 10px; border-radius: 6px; border: 1px solid #ced4da; background-color: #fff;" value="{{ totals.end_date }}">
+            </div>
+
+            <div>
+                <button type="submit" style="margin-top: 24px; padding: 10px 25px; background-color: #007bff; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: background-color 0.3s;">
+                    🔍 Generar Reporte
+                </button>
+            </div>
         </div>
-        <div style="padding: 15px; border: 1px solid #17a2b8; border-left: 5px solid #17a2b8; border-radius: 5px; flex: 1;">
-            <strong>Transacciones:</strong> <span style="font-size: 1.2em; color: #17a2b8;">{{ totals.total_transactions }}</span>
+    </form>
+
+    {% if sales %}
+    <h2 style="color: #212529; font-size: 1.5rem; margin-bottom: 20px;">📅 Resultados del Periodo Seleccionado</h2>
+
+    <div class="summary-metrics" style="display: flex; flex-wrap: wrap; gap: 20px; margin-bottom: 30px;">
+        <div style="padding: 20px; background-color: #eafaf1; border-left: 6px solid #28a745; border-radius: 8px; flex: 1; box-shadow: 0 1px 4px rgba(0,0,0,0.05);">
+            <strong>💰 Ventas Totales (Neto):</strong><br>
+            <span style="font-size: 1.3em; color: #28a745;">${{ totals.total_sales|floatformat:2 }}</span>
         </div>
-        <div style="padding: 15px; border: 1px solid #ffc107; border-left: 5px solid #ffc107; border-radius: 5px; flex: 1;">
-            <strong>Total Efectivo:</strong> <span style="font-size: 1.2em; color: #ffc107;">${{ totals.total_cash|floatformat:2 }}</span>
+        <div style="padding: 20px; background-color: #e6f7fb; border-left: 6px solid #17a2b8; border-radius: 8px; flex: 1; box-shadow: 0 1px 4px rgba(0,0,0,0.05);">
+            <strong>🧾 Transacciones:</strong><br>
+            <span style="font-size: 1.3em; color: #17a2b8;">{{ totals.total_transactions }}</span>
         </div>
-        <div style="padding: 15px; border: 1px solid #007bff; border-left: 5px solid #007bff; border-radius: 5px; flex: 1;">
-            <strong>Total Tarjeta:</strong> <span style="font-size: 1.2em; color: #007bff;">${{ totals.total_card|floatformat:2 }}</span>
+        <div style="padding: 20px; background-color: #fff8e1; border-left: 6px solid #ffc107; border-radius: 8px; flex: 1; box-shadow: 0 1px 4px rgba(0,0,0,0.05);">
+            <strong>💵 Total Efectivo:</strong><br>
+            <span style="font-size: 1.3em; color: #ffc107;">${{ totals.total_cash|floatformat:2 }}</span>
+        </div>
+        <div style="padding: 20px; background-color: #e2eafc; border-left: 6px solid #007bff; border-radius: 8px; flex: 1; box-shadow: 0 1px 4px rgba(0,0,0,0.05);">
+            <strong>💳 Total Tarjeta:</strong><br>
+            <span style="font-size: 1.3em; color: #007bff;">${{ totals.total_card|floatformat:2 }}</span>
         </div>
     </div>
-    
-    <h3>Detalle de Transacciones ({{ totals.total_transactions }} ventas)</h3>
-    <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
-        <thead>
-            <tr style="background-color: #e9ecef;">
-                <th style="padding: 12px; border: 1px solid #ddd;">ID Venta</th>
-                <th style="padding: 12px; border: 1px solid #ddd;">Fecha y Hora</th>
-                <th style="padding: 12px; border: 1px solid #ddd;">Vendedor</th>
-                <th style="padding: 12px; border: 1px solid #ddd;">Método de Pago</th>
-                <th style="padding: 12px; border: 1px solid #ddd; text-align: right;">Total</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for sale in sales %}
-            <tr>
-                <td style="padding: 12px; border: 1px solid #ddd;">{{ sale.id }}</td>
-                <td style="padding: 12px; border: 1px solid #ddd;">{{ sale.created_at|date:"Y-m-d H:i" }}</td>
-                <td style="padding: 12px; border: 1px solid #ddd;">{{ sale.cash_drawer_session.user.username }}</td>
-                <td style="padding: 12px; border: 1px solid #ddd;">{{ sale.get_payment_method_display }}</td> 
-                <td style="padding: 12px; border: 1px solid #ddd; text-align: right; font-weight: bold;">${{ sale.total_amount|floatformat:2 }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    {% elif request.method == 'POST' %}
-    <p style="color: #dc3545; font-weight: bold;">No se encontraron ventas para el rango de fechas seleccionado.</p>
-    {% endif %}
 
+    <h3 style="font-size: 1.3rem; margin-bottom: 10px;">📋 Detalle de Transacciones ({{ totals.total_transactions }} ventas)</h3>
+    <div style="max-height: 400px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 8px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);">
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead style="position: sticky; top: 0; background-color: #f8f9fa; z-index: 1;">
+                <tr>
+                    <th style="padding: 12px; border-bottom: 2px solid #dee2e6; text-align: left;">ID Venta</th>
+                    <th style="padding: 12px; border-bottom: 2px solid #dee2e6; text-align: left;">Fecha y Hora</th>
+                    <th style="padding: 12px; border-bottom: 2px solid #dee2e6; text-align: left;">Vendedor</th>
+                    <th style="padding: 12px; border-bottom: 2px solid #dee2e6; text-align: left;">Método de Pago</th>
+                    <th style="padding: 12px; border-bottom: 2px solid #dee2e6; text-align: right;">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sale in sales %}
+                <tr style="background-color: {% cycle '#ffffff' '#f1f3f5' %};">
+                    <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">{{ sale.id }}</td>
+                    <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">{{ sale.sale_date|date:"Y-m-d H:i" }}</td>
+                    <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">{{ sale.cash_drawer_session.user.username }}</td>
+                    <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">{{ sale.get_payment_method_display }}</td>
+                    <td style="padding: 12px; border-bottom: 1px solid #dee2e6; text-align: right; font-weight: bold;">${{ sale.total_amount|floatformat:2 }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% elif request.method == 'POST' %}
+    <p style="color: #dc3545; font-weight: bold; margin-top: 20px;">⚠️ No se encontraron ventas para el rango de fechas seleccionado.</p>
+    {% endif %}
 </div>
 {% endblock %}

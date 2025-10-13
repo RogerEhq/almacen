@@ -1,39 +1,165 @@
 {% extends 'base.html' %}
 {% block title %}Dashboard | Administración{% endblock %}
 
-{% block content %}
-<div>
-    <h1>Dashboard de Administración</h1>
+{% block extra_styles %}
+<style>
+    /* Estilos Específicos del Dashboard */
 
-    <h2>Métricas del Día (Hoy)</h2>
+    /* Contenedor Principal (Dentro del 'content' del base.html) */
+    .dashboard-container {
+        padding: 30px;
+        background-color: #f7f9fc;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    }
+
+    /* Títulos */
+    h1 {
+        color: #1e40af; /* Azul oscuro corporativo */
+        font-size: 2.5em;
+        margin-bottom: 5px;
+        font-weight: 700;
+    }
+
+    h2 {
+        color: #495057;
+        font-size: 1.8em;
+        margin-top: 35px;
+        margin-bottom: 20px;
+        border-bottom: 2px solid #e6e9f5;
+        padding-bottom: 10px;
+    }
+
+    /* GRID de Métricas (Tarjetas) */
+    .metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 25px;
+    }
+
+    .metric-card {
+        background: white;
+        padding: 25px;
+        border-radius: 10px;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+        border-left: 5px solid #007bff;
+        transition: transform 0.3s ease;
+    }
+
+    .metric-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+    }
+
+    .metric-card:nth-child(1) { border-left-color: #28a745; /* Verde para Ventas Totales */ }
+    .metric-card:nth-child(2) { border-left-color: #ffc107; /* Amarillo para Transacciones */ }
+    .metric-card:nth-child(3) { border-left-color: #17a2b8; /* Cyan para Ticket Promedio */ }
+    .metric-card:nth-child(4) { border-left-color: #dc3545; /* Rojo para Sesiones Activas */ }
+
+    .metric-card h3 {
+        color: #6c757d;
+        font-size: 1em;
+        margin-top: 0;
+        margin-bottom: 10px;
+        text-transform: uppercase;
+        font-weight: 600;
+    }
+
+    .metric-card p {
+        font-size: 2.8em; /* Tamaño grande para la cifra */
+        font-weight: bold;
+        color: #343a40;
+        margin: 0;
+        line-height: 1.1;
+    }
+
+    /* Colores específicos para los valores */
+    .metric-card:nth-child(1) p { color: #28a745; }
+    .metric-card:nth-child(3) p { font-size: 2.4em; } /* Ticket promedio un poco más chico */
+
+    /* TABLA DE TOP PRODUCTOS */
+    .top-products-section {
+        margin-top: 50px;
+    }
+
+    .top-products-section table {
+        width: 100%;
+        max-width: 600px; /* Limitar el ancho para enfoque */
+        border-collapse: separate;
+        border-spacing: 0;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        background: white;
+    }
+
+    .top-products-section th, .top-products-section td {
+        padding: 15px 20px;
+        text-align: left;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .top-products-section th {
+        background-color: #eef2ff;
+        color: #1e40af;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    .top-products-section tbody tr:hover {
+        background-color: #f6f8ff;
+    }
+
+    .top-products-section tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .top-products-section td:last-child {
+        font-weight: bold;
+        color: #343a40;
+    }
+
+    .top-products-section td[colspan="2"] {
+        text-align: center;
+        font-style: italic;
+        color: #999;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <h1>📊 Dashboard de Administración</h1>
+
+    <h2>📅 Métricas del Día (Hoy)</h2>
 
     <div class="metrics-grid">
 
         <div class="metric-card">
-            <h3>Ventas Totales Hoy</h3>
+            <h3>💰 Ventas Totales Hoy</h3>
             <p>${{ ventas_hoy|floatformat:2 }}</p>
         </div>
 
         <div class="metric-card">
-            <h3>Transacciones Hoy</h3>
+            <h3>🧾 Transacciones Hoy</h3>
             <p>{{ transacciones_hoy }}</p>
         </div>
 
         <div class="metric-card">
-            <h3>Ticket Promedio</h3>
+            <h3>📈 Ticket Promedio</h3>
             <p>${{ ticket_promedio|floatformat:2 }}</p>
         </div>
 
         <div class="metric-card">
-            <h3>Sesiones de Caja Activas</h3>
+            <h3>🟢 Sesiones de Caja Activas</h3>
             <p>{{ sesiones_activas }}</p>
         </div>
     </div>
 
     <div class="top-products-section">
-        <h2>Top 5 Productos Más Vendidos (Histórico)</h2>
+        <h2>🏆 Top 5 Productos Más Vendidos (Histórico)</h2>
 
-        <table style="width: 50%;">
+        <table>
             <thead>
                 <tr>
                     <th>Producto</th>

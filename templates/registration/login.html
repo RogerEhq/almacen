@@ -7,7 +7,7 @@
     <title>POS | Iniciar Sesión</title>
 
     <style>
-        /* BASE GENERAL */
+        /* BASE GENERAL Y FONDO DINÁMICO */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
@@ -15,101 +15,143 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            background-color: #f0f3f8; /* Mismo fondo que base.html */
             color: #333;
+
+            /* Fondo Dinámico: Patrón sutil y profesional */
+            background: linear-gradient(135deg, #f0f3f8 0%, #e6e9f5 100%);
+            animation: backgroundShift 15s ease infinite alternate;
+        }
+
+        @keyframes backgroundShift {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 100% 50%; }
         }
 
         /* CONTENEDOR DEL FORMULARIO */
         .login-container {
             width: 100%;
-            max-width: 380px;
-            padding: 35px;
+            max-width: 400px; /* Un poco más amplio */
+            padding: 40px;
             background-color: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15); /* Sombra más profunda */
+            border-radius: 15px; /* Bordes más suaves */
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); /* Sombra más fuerte y elevada */
             text-align: center;
+            transition: transform 0.3s ease;
         }
 
-        /* TÍTULO */
+        .login-container:hover {
+            transform: translateY(-5px); /* Efecto 3D al pasar el ratón */
+        }
+
+        /* TÍTULO Y LOGO (Simulado) */
         h1 {
             color: #1e40af; /* Azul oscuro */
-            margin-bottom: 30px;
-            font-size: 1.8em;
-            border-bottom: 2px solid #e6e9f5;
+            margin-bottom: 25px;
+            font-size: 2.2em;
+            font-weight: 700;
+            border-bottom: 3px solid #e6e9f5;
             padding-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Icono de Carrito para el título (¡CORRECCIÓN AQUÍ!) */
+        h1::before {
+            content: '🛒'; /* Icono de Carrito de compras */
+            margin-right: 10px;
+            font-size: 1.2em;
         }
 
         /* ESTILOS DEL FORMULARIO */
         form p {
-            margin-bottom: 15px;
+            margin-bottom: 20px;
             text-align: left;
+            position: relative;
+        }
+
+        /* Ocultar etiquetas por defecto si Django las renderiza antes del input */
+        form label {
+            display: none;
         }
 
         /* CAMPOS DE INPUT */
         input[type="text"], input[type="password"] {
             width: 100%;
-            padding: 12px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            box-sizing: border-box; /* Asegura que el padding no cambie el ancho total */
-            font-size: 1em;
-            transition: border-color 0.2s;
+            padding: 15px;
+            border: 1px solid #cceeff; /* Borde más suave */
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 1.1em;
+            transition: all 0.3s ease;
+            background-color: #fafafa;
         }
 
+        /* Efecto al enfocar (Interactividad) */
         input[type="text"]:focus, input[type="password"]:focus {
             border-color: #1e40af;
+            box-shadow: 0 0 8px rgba(30, 64, 175, 0.3);
+            background-color: white;
             outline: none;
+        }
+
+        /* Placeholder styling for better usability */
+        input[type="text"]::placeholder, input[type="password"]::placeholder {
+            color: #999;
         }
 
         /* ETIQUETAS DE ERROR */
         ul.errorlist {
             list-style: none;
-            padding: 0;
-            margin-top: -10px;
-            margin-bottom: 10px;
-            color: #dc3545; /* Rojo de error */
+            padding: 5px 0 0 0;
+            margin-top: 0;
+            color: #dc3545;
             text-align: left;
             font-size: 0.9em;
+            font-weight: 500;
         }
 
         /* BOTÓN DE ACCESO */
         button[type="submit"] {
             width: 100%;
-            padding: 12px;
-            background-color: #007bff; /* Azul primario */
+            padding: 15px;
+            background-color: #007bff;
             color: white;
             border: none;
-            border-radius: 6px;
+            border-radius: 8px;
             cursor: pointer;
             font-weight: bold;
-            font-size: 1.1em;
-            margin-top: 10px;
-            transition: background-color 0.2s, transform 0.1s;
+            font-size: 1.2em;
+            margin-top: 25px;
+            transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
         }
 
         button[type="submit"]:hover {
             background-color: #0056b3;
-            transform: translateY(-1px);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0, 123, 255, 0.4);
         }
 
         /* MENSAJE DE ERROR GENERAL */
         .error-message {
-            color: #dc3545;
+            color: #721c24;
             background-color: #f8d7da;
             border: 1px solid #f5c6cb;
-            padding: 10px;
-            border-radius: 6px;
-            margin-top: 20px;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 25px;
             font-weight: 500;
+            font-size: 0.95em;
         }
     </style>
 </head>
 <body>
     <div class="login-container">
-        <h1>Acceso POS</h1>
+        <h1>Inicio de Sesión</h1>
         <form method="post">
             {% csrf_token %}
             {{ form.as_p }}
+
             <button type="submit">Acceder</button>
         </form>
         {% if form.errors %}

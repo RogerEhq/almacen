@@ -1,168 +1,265 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Punto de Venta</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POS | Punto de Venta</title>
     <meta name="csrf-token" content="{{ csrf_token }}">
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <style>
-        /* ESTILOS NUEVOS Y MEJORADOS */
+        /* BASE Y LAYOUT GENERAL */
         body {
-            font-family: 'Arial', sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
-            background-color: #f4f7f9; /* Fondo suave */
+            background-color: #eef1f5; /* Fondo suave */
             color: #333;
         }
 
         .pos-container {
             display: flex;
-            max-width: 1300px;
-            margin: 20px auto;
+            max-width: 1400px;
+            height: 95vh; /* Ocupa casi toda la altura de la pantalla */
+            margin: 2.5vh auto;
             background-color: #fff;
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
-            border-radius: 12px;
-            min-height: 90vh;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15); /* Sombra profesional */
+            border-radius: 16px;
+            overflow: hidden;
         }
 
         .cart-area {
             width: 65%;
-            padding: 30px;
+            padding: 30px 40px;
             border-right: 1px solid #e0e0e0;
+            display: flex;
+            flex-direction: column; /* Habilita el layout vertical con flexbox */
         }
 
         /* ENCABEZADO Y SESIÓN */
         h1 {
-            color: #007bff; /* Azul brillante para el título */
+            color: #1e40af; /* Azul oscuro corporativo */
             margin-top: 0;
-            border-bottom: 2px solid #b3d9ff;
-            padding-bottom: 15px;
-            font-size: 1.8em;
+            font-size: 2.2em;
+            font-weight: 700;
         }
 
-        .pos-container p {
-            border-bottom: 1px solid #f0f0f0;
+        /* Información de sesión y controles */
+        .pos-header-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #e6e9f5;
             padding-bottom: 15px;
+            margin-bottom: 25px;
             font-size: 0.95em;
         }
+        .pos-header-info p {
+            margin: 0;
+            padding: 0;
+            border: none;
+        }
+        .pos-header-info span#cash-balance { font-weight: bold; color: #28a745; font-size: 1.1em; }
 
-        /* BÚSQUEDA DE PRODUCTO */
-        #product-search h2 { margin-top: 25px; color: #495057; font-size: 1.3em; }
-        #sku-input {
-            width: 90%;
-            padding: 15px;
-            margin-bottom: 20px;
-            border: 2px solid #ccc;
-            border-radius: 8px;
+        /* Estilos para los botones/enlaces de la sesión */
+        .session-controls a {
+            color: #007bff;
+            text-decoration: none;
+            transition: color 0.2s;
+            margin-left: 15px;
+        }
+        .session-controls a:hover { color: #0056b3; text-decoration: underline; }
+
+        .session-controls button[type="submit"] {
+            background: none;
+            border: none;
+            color: #dc3545; /* Rojo para acción de cierre/logout */
+            cursor: pointer;
+            padding: 0;
+            font-family: inherit;
+            font-size: 1em;
+            text-decoration: underline;
+            transition: color 0.2s;
+            margin-left: 15px;
+        }
+        .session-controls button[type="submit"]:hover {
+             color: #a71d2a;
+        }
+
+
+        /* BÚSQUEDA DE PRODUCTO (El Foco de la UX) */
+        #product-search h2 {
+            margin-top: 10px;
+            color: #495057;
             font-size: 1.2em;
-            transition: border-color 0.3s, box-shadow 0.3s;
+            font-weight: 500;
+        }
+        #sku-input {
+            width: 90%; /* Ajustado al 90% para dejar espacio para la sombra */
+            padding: 22px; /* Más grande para facilidad de uso */
+            margin-bottom: 30px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            font-size: 1.6em;
+            font-weight: 600;
+            transition: all 0.3s;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
         }
         #sku-input:focus {
-            border-color: #007bff;
-            box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+            border-color: #1e40af; /* Azul de enfoque */
+            box-shadow: 0 0 8px rgba(30, 64, 175, 0.4);
             outline: none;
+            background-color: #fff;
         }
 
-        /* ESTILOS DE SESIÓN Y LOGOUT */
-        .pos-container span#cash-balance { font-weight: bold; color: #28a745; }
-        .pos-container span[style*="red"] { font-weight: bold; }
-
-        .pos-container a { color: #007bff; text-decoration: none; transition: color 0.2s; }
-        .pos-container a:hover { color: #0056b3; text-decoration: underline; }
-
-        .pos-container button[type="submit"][style*="blue"] {
-            color: #dc3545 !important; /* Rojo para acción de cierre */
-            text-decoration: underline;
-            font-weight: bold;
-            font-size: 1em !important;
-        }
 
         /* TABLA DE CARRITO */
+        #cart-section {
+            flex-grow: 1; /* Permite que el carrito crezca para llenar el espacio */
+            overflow-y: auto; /* Permite desplazamiento */
+        }
+        #cart-section h2 {
+            margin-top: 0;
+            color: #1e40af;
+            font-size: 1.6em;
+            margin-bottom: 15px;
+        }
         .cart-table {
             width: 100%;
-            border-collapse: collapse;
-            border-radius: 8px;
-            overflow: hidden; /* Para que las esquinas redondeadas funcionen */
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            border-collapse: separate;
+            border-spacing: 0;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            margin-bottom: 15px;
         }
         .cart-table th, .cart-table td {
-            padding: 12px 15px;
+            padding: 15px 20px;
             text-align: left;
-            border: none;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid #f0f0f0;
         }
         .cart-table th {
-            background-color: #e9ecef;
-            color: #495057;
+            background-color: #eef2ff;
+            color: #1e40af;
             font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.9em;
         }
-        .cart-table tbody tr:last-child td { border-bottom: none; }
-        .cart-table tbody tr:hover { background-color: #f8f9fa; }
+        .cart-table tbody tr:hover { background-color: #f6f8ff; }
 
-        /* ÁREA DE TOTAL */
+
+        /* ÁREA DE TOTAL (Lo más importante) */
         #total-area {
-            font-size: 2.2em;
+            font-size: 3em; /* Muy grande */
             text-align: right;
-            margin-top: 30px;
-            padding: 15px 0;
-            border-top: 3px solid #28a745; /* Línea verde de separación */
-            color: #28a745;
-            font-weight: bold;
+            margin-top: 20px;
+            padding: 20px 0;
+            color: #28a745; /* Verde de éxito */
+            font-weight: 700;
+            border-top: 4px solid #28a745; /* Separador grueso */
+            border-bottom: none; /* Asegurar que no tome el estilo de <p> */
         }
 
-        /* CONTROLES DE PAGO */
+
+        /* CONTROLES DE PAGO (Checkout) */
         .checkout-controls {
             width: 35%;
-            padding: 30px;
-            background-color: #fcfcfc;
+            padding: 40px 30px;
+            background-color: #f7f9fc;
             border-left: 1px solid #e0e0e0;
-            border-radius: 0 12px 12px 0;
-        }
-        .checkout-controls h3 {
-            color: #007bff;
-            border-bottom: 1px solid #ccc;
-            padding-bottom: 15px;
-            margin-top: 0;
+            border-radius: 0 16px 16px 0;
+            display: flex;
+            flex-direction: column; /* Habilita el layout vertical con flexbox */
         }
 
+        /* Flexbox para empujar el botón al fondo de la columna */
+        #checkout-form {
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1; /* Permitir que el formulario crezca */
+        }
+
+        .checkout-controls h3 {
+            color: #1e40af;
+            border-bottom: 1px solid #cceeff;
+            padding-bottom: 15px;
+            margin-top: 0;
+            font-size: 1.8em;
+            font-weight: 600;
+        }
+        .checkout-controls h4 {
+            color: #495057;
+            margin-top: 30px;
+            font-size: 1.2em;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+
+        .payment-select {
+            margin-bottom: 40px;
+        }
         .payment-select label {
             display: block;
-            margin-bottom: 15px;
-            font-size: 1.1em;
+            margin-bottom: 10px;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1.2em;
+            transition: background-color 0.2s, border-color 0.2s;
             cursor: pointer;
+            text-align: left;
+            background-color: #fff;
+        }
+        .payment-select label:hover {
+            background-color: #f6f8ff;
+            border-color: #007bff;
+        }
+        .payment-select input[type="radio"] {
+            margin-right: 15px;
+            transform: scale(1.2);
+            accent-color: #1e40af;
         }
 
         /* BOTÓN FINALIZAR VENTA */
         .checkout-controls button[type="submit"] {
             width: 100%;
-            padding: 18px;
-            background-color: #ffc107; /* Amarillo/Naranja para acción de pago */
-            color: #343a40;
+            padding: 25px; /* Más grande para ser un gran botón de acción */
+            background-color: #28a745;
+            color: white;
             border: none;
-            border-radius: 8px;
-            font-size: 1.3em;
-            font-weight: bold;
+            border-radius: 10px;
+            font-size: 1.7em;
+            font-weight: 700;
             cursor: pointer;
-            transition: background-color 0.3s, opacity 0.3s;
+            transition: background-color 0.3s, transform 0.1s;
+            text-transform: uppercase;
+            box-shadow: 0 6px 15px rgba(40, 167, 69, 0.4);
+            margin-top: auto; /* <---- Empuja el botón al fondo */
         }
         .checkout-controls button[type="submit"]:hover {
-            background-color: #e0a800;
+            background-color: #1e7e34;
+            transform: translateY(-3px);
         }
         .checkout-controls button[type="submit"][disabled] {
             background-color: #adb5bd;
             cursor: not-allowed;
             opacity: 0.8;
             color: #6c757d;
+            transform: none;
+            box-shadow: none;
         }
 
         /* MENSAJE DE CONFIRMACIÓN */
+        #confirmation-area {
+            margin-top: 20px;
+        }
         .success-message {
             background: #d4edda;
             border: 1px solid #c3e6cb;
             color: #155724;
             padding: 15px;
-            margin-top: 20px;
-            border-radius: 6px;
+            border-radius: 8px;
             font-weight: bold;
+            text-align: center;
         }
     </style>
 </head>
@@ -170,31 +267,31 @@
 
 <div class="pos-container">
     <div class="cart-area">
-        <h1>Punto de Venta Simple</h1>
-        <p>Vendedor: <b>{{ user.username }}</b>
-            | Caja Abierta:
-            {% if active_session %}
-                <span id="cash-balance">${{ active_session.starting_balance|floatformat:2 }}</span>
-            {% else %}
-                <span style="color: red;">No activa</span>
-            {% endif %}
-            |
+        <h1>Punto de Venta</h1>
 
-            <a href="{% url 'close_session' %}" {% if not active_session %}style="pointer-events: none; color: gray;"{% endif %}>
-                Cerrar Caja
-            </a>
-            |
-
-            <form style="display:inline;" method="post" action="{% url 'logout' %}">
-                {% csrf_token %}
-                <button type="submit" style="background: none; border: none; color: blue; cursor: pointer; padding: 0; font-family: sans-serif; font-size: 1em;">
-                    Cerrar Sesión
-                </button>
-            </form>
-        </p>
-
+        <div class="pos-header-info">
+            <p>Vendedor: <b>{{ user.username }}</b>
+                | Caja Abierta:
+                {% if active_session %}
+                    <span id="cash-balance">${{ active_session.starting_balance|floatformat:2 }}</span>
+                {% else %}
+                    <span style="color: red;">No activa</span>
+                {% endif %}
+            </p>
+            <div class="session-controls">
+                <a href="{% url 'close_session' %}" {% if not active_session %}style="pointer-events: none; color: gray;"{% endif %}>
+                    Cerrar Caja
+                </a>
+                <form style="display:inline;" method="post" action="{% url 'logout' %}">
+                    {% csrf_token %}
+                    <button type="submit">
+                        Cerrar Sesión
+                    </button>
+                </form>
+            </div>
+        </div>
         <div id="product-search">
-            <h2>Añadir Producto</h2>
+            <h2>Escanear o Buscar Producto</h2>
             <input
                 type="text"
                 name="sku"
@@ -237,8 +334,9 @@
                     {% endfor %}
                 </tbody>
             </table>
-            <h3 id="total-area">Total: ${{ cart_total|floatformat:2 }}</h3>
         </div>
+
+        <h3 id="total-area">Total: ${{ cart_total|floatformat:2 }}</h3>
     </div>
 
     <div class="checkout-controls">
@@ -259,7 +357,6 @@
                     <input type="radio" name="payment_method" value="card"> Tarjeta
                 </label>
             </div>
-            <br>
             <button type="submit">Finalizar Venta</button>
         </form>
         <div id="confirmation-area"></div>
