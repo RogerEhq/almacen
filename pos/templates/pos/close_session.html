@@ -185,10 +185,14 @@
 
         <div class="financial-summary">
             <h2>Resumen Financiero</h2>
-            <div>Fondo Inicial: <span><b>${{ session.starting_balance|floatformat:2 }}</b></span></div>
+
+            <div>Fondo Inicial (Referencia): <span><b>${{ session.starting_balance|floatformat:2 }}</b></span></div>
+
             <div>+ Total Ventas en Efectivo: <span><b>${{ cash_sales|floatformat:2 }}</b></span></div>
             <hr>
-            <div class="expected-total">Total Esperado en Efectivo: <span><b>${{ expected_balance|floatformat:2 }}</b></span></div>
+
+            <div class="expected-total">Total Esperado de Ventas en Efectivo: <span><b>${{ expected_balance|floatformat:2 }}</b></span></div>
+
             <hr>
             <div>Total Ventas con Tarjeta (Referencia): <span>${{ card_sales|floatformat:2 }}</span></div>
         </div>
@@ -197,7 +201,7 @@
         <form method="post">
             {% csrf_token %}
 
-            <label for="ending_balance">Monto Contado Físicamente ($):</label>
+            <label for="ending_balance">Monto Contado Físicamente (Solo Ingreso por Ventas) ($):</label>
             <input
                 type="number"
                 id="ending_balance"

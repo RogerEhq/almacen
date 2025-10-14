@@ -50,19 +50,28 @@ def open_session_view(request):
 @login_required
 def close_session_view(request):
     """Vista para cerrar el turno de caja (HU #6)."""
+    # ... (Se mantiene la lógica para encontrar la sesión activa) ...
     active_session = CashDrawerSession.objects.filter(user=request.user, end_time__isnull=True).first()
     if not active_session:
         return redirect('pos_main')
 
-    cash_sales = active_session.sales.filter(payment_method='cash').aggregate(total_sum=Sum('total_amount'))['total_sum'] or Decimal('0.00')
-    card_sales = active_session.sales.filter(payment_method='card').aggregate(total_sum=Sum('total_amount'))['total_sum'] or Decimal('0.00')
-    expected_balance = active_session.starting_balance + cash_sales
+    # 1. Se calcula el total de ventas en efectivo
+    cash_sales = active_session.sales.filter(payment_method='cash').aggregate(total_sum=Sum('total_amount'))[
+                     'total_sum'] or Decimal('0.00')
+
+    # 2. Se calcula el total de ventas con tarjeta (solo referencia)
+    card_sales = active_session.sales.filter(payment_method='card').aggregate(total_sum=Sum('total_amount'))[
+                     'total_sum'] or Decimal('0.00')
+
+    # ✅ CORRECCIÓN CLAVE: El total esperado es SOLO las ventas en efectivo.
+    # El fondo inicial se mantiene separado para que el cajero lo retire.
+    expected_balance = cash_sales
 
     context = {
         'session': active_session,
         'cash_sales': cash_sales,
         'card_sales': card_sales,
-        'expected_balance': expected_balance,
+        'expected_balance': expected_balance,  # Este valor ahora es igual a cash_sales
     }
 
     if request.method == 'POST':
