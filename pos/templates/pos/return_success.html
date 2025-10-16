@@ -1,0 +1,26 @@
+{% extends 'base.html' %} 
+
+{% block title %}Devolución Exitosa{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="alert alert-success" role="alert">
+        <h4 class="alert-heading">✅ Devolución Procesada con Éxito</h4>
+        <p>La devolución de la <strong>Venta #{{ sale_return.original_sale.id }}</strong> ha sido registrada y el stock ha sido ajustado.</p>
+        <hr>
+        <p class="mb-0">Monto Total Reembolsado: <strong>${{ sale_return.total_refund_amount|floatformat:2 }}</strong></p>
+        <p>Procesado por: {{ sale_return.returned_by.username }}</p>
+    </div>
+
+    <h4>Productos Devueltos:</h4>
+    <ul>
+        {% for item in items_returned %}
+            <li>{{ item.quantity }}x {{ item.item.product.name }} (Reembolso: ${{ item.refund_amount|floatformat:2 }})</li>
+        {% endfor %}
+    </ul>
+
+    <a href="{% url 'return_search' %}" class="btn btn-primary mt-3">
+        <i class="fas fa-search"></i> Iniciar Nueva Devolución
+    </a>
+</div>
+{% endblock %}

@@ -2,7 +2,7 @@
 from django.contrib import admin
 from django.db.models import Sum
 from decimal import Decimal
-from .models import Product, Category, Supplier, Sale, SaleItem, CashDrawerSession, Client
+from .models import Product, Category, Supplier, Sale, SaleItem, CashDrawerSession, Client, SaleReturn, SaleReturnItem
 
 
 # Registro de Productos (Sprint 2)
@@ -56,3 +56,5 @@ admin.site.register(Supplier)
 admin.site.register(Sale)
 admin.site.register(SaleItem)
 admin.site.register(Client)
+admin.site.register(SaleReturn)
+admin.site.register(SaleReturnItem)

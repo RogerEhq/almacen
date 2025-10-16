@@ -4,7 +4,7 @@ from datetime import datetime
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.forms import DecimalField, models
 from django.shortcuts import render, get_object_or_404, redirect
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST, require_http_methods
 from django.http import HttpResponse, JsonResponse
 from django.db import transaction
 from django.db.models import Sum, Count, Q, ExpressionWrapper, F
@@ -15,7 +15,7 @@ from openpyxl import Workbook
 from django.db.models import F
 
 from .forms import ProductForm, StockUpdateForm, ClientForm
-from .models import Product, Sale, SaleItem, CashDrawerSession, Supplier, Client
+from .models import Product, Sale, SaleItem, CashDrawerSession, Supplier, Client, SaleReturnItem, SaleReturn
 from django.db.models.functions import ExtractYear, ExtractMonth
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
@@ -770,3 +770,116 @@ def client_search_ajax(request):
 
     return JsonResponse({'results': clients_data})
 
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def return_search_view(request):
+    """Página para buscar una venta por ID y mostrar los detalles."""
+    sale = None
+    if request.method == 'POST':
+        sale_id = request.POST.get('sale_id')
+        if sale_id:
+            try:
+                # 🎯 CORRECCIÓN: Eliminamos prefetch_related aquí
+                sale = Sale.objects.get(id=sale_id)
+            except Sale.DoesNotExist:
+                return render(request, 'pos/return_search.html', {
+                    'error': f'No se encontró la venta con ID: {escape(sale_id)}.'
+                })
+
+            # Redirigir a la página de proceso con el ID de venta
+            return redirect('process_return', sale_id=sale.id)
+
+    return render(request, 'pos/return_search.html', {})
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+@transaction.atomic
+def process_return_view(request, sale_id):
+    """Página para seleccionar productos a devolver y procesar la devolución."""
+
+    # 1. Obtener la venta y sus ítems
+    # 🎯 CORRECCIÓN CLAVE: Cambiado 'saleitem_set__product' por 'items__product'
+    sale = get_object_or_404(
+        Sale.objects.prefetch_related('items__product'),
+        id=sale_id
+    )
+
+    if request.method == 'POST':
+        # 2. Inicializar contadores
+        items_to_return = []
+        total_refund = Decimal('0.00')
+        motive = request.POST.get('motive', 'Devolución sin motivo especificado')
+
+        # 3. Procesar los datos del formulario
+        # 🎯 CORRECCIÓN: Cambiado sale.saleitem_set.all() por sale.items.all()
+        for item in sale.items.all():
+            return_qty_str = request.POST.get(f'qty_{item.id}')
+
+            try:
+                return_qty = int(return_qty_str) if return_qty_str else 0
+            except ValueError:
+                # Manejar entrada inválida
+                return HttpResponse(
+                    f'<p style="color:red;">Cantidad inválida para el producto {escape(item.product.name)}.</p>',
+                    status=400)
+
+            # Validación: La cantidad devuelta no puede ser mayor a la cantidad original
+            if return_qty > item.quantity:
+                return HttpResponse(
+                    f'<p style="color:red;">No se puede devolver más de lo que se compró para {escape(item.product.name)}.</p>',
+                    status=400)
+
+            if return_qty > 0:
+                # Calcular el monto de reembolso para este artículo
+                refund_amount = item.unit_price * return_qty
+                total_refund += refund_amount
+
+                items_to_return.append({
+                    'item': item,
+                    'quantity': return_qty,
+                    'refund_amount': refund_amount
+                })
+
+        if not items_to_return:
+            return HttpResponse('<p style="color:red;">Debe seleccionar al menos un producto para devolver.</p>',
+                                status=400)
+
+        # 4. Crear el objeto SaleReturn
+        sale_return = SaleReturn.objects.create(
+            original_sale=sale,
+            returned_by=request.user,
+            motive=motive,
+            total_refund_amount=total_refund
+        )
+
+        # 5. Crear los objetos SaleReturnItem e incrementar el stock
+        for data in items_to_return:
+            item = data['item']
+
+            SaleReturnItem.objects.create(
+                return_request=sale_return,
+                product=item.product,
+                quantity=data['quantity'],
+                refund_amount=data['refund_amount']
+            )
+
+            # Incrementar el stock
+            product = Product.objects.get(pk=item.product.pk)
+            product.stock += data['quantity']
+            product.save()
+
+        # 6. Éxito: Generar mensaje de confirmación
+        return render(request, 'pos/return_success.html', {
+            'sale_return': sale_return,
+            'items_returned': items_to_return
+        })
+
+    # GET request: Mostrar el formulario de devolución
+    context = {
+        'sale': sale,
+        # 🎯 CORRECCIÓN: Cambiado sale.saleitem_set.all() por sale.items.all()
+        'sale_items': sale.items.all(),
+    }
+    return render(request, 'pos/process_return.html', context)

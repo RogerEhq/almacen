@@ -1,0 +1,58 @@
+{% extends 'base.html' %} 
+
+{% block title %}Procesar Devolución - Venta #{{ sale.id }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>↩️ Devolución de Venta #{{ sale.id }}</h2>
+    <p>Vendedor: {{ sale.seller.username }} | Cliente (ID Fiscal): {{ sale.client.tax_id|default:"Consumidor Final" }}</p>
+    <p>Total de la Venta Original: <strong class="text-success">${{ sale.total_amount|floatformat:2 }}</strong></p>
+    <hr>
+
+    <form method="POST" action="{% url 'process_return' sale_id=sale.id %}">
+        {% csrf_token %}
+        
+        <h4 class="mb-3">Productos Comprados:</h4>
+        <table class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>Producto</th>
+                    <th>Cantidad Comprada</th>
+                    <th>Precio Unitario</th>
+                    <th>Subtotal</th>
+                    <th style="width: 150px;">Cantidad a Devolver</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in sale_items %}
+                <tr>
+                    <td>{{ item.product.name }}</td>
+                    <td>{{ item.quantity }}</td>
+                    <td>${{ item.unit_price|floatformat:2 }}</td>
+                    <td>${{ item.subtotal|floatformat:2 }}</td>
+                    <td>
+                        <input type="number" 
+                               name="qty_{{ item.id }}" 
+                               value="0" 
+                               min="0" 
+                               max="{{ item.quantity }}" 
+                               class="form-control form-control-sm"
+                               style="width: 100px;">
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <div class="form-group mb-3">
+            <label for="motive">Motivo de la Devolución (Opcional):</label>
+            <textarea id="motive" name="motive" class="form-control"></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-danger btn-lg mt-3">
+            <i class="fas fa-undo"></i> Confirmar Devolución
+        </button>
+        <a href="{% url 'return_search' %}" class="btn btn-secondary mt-3">Cancelar</a>
+    </form>
+</div>
+{% endblock %}

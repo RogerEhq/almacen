@@ -25,7 +25,7 @@
                 </button>
             </div>
 
-            {# Botón de Exportar a PDF (ya existente) #}
+            {# Botón de Exportar a PDF #}
             <div>
                 <button
                     type="submit"
@@ -37,7 +37,7 @@
                 </button>
             </div>
 
-            {# Botón de Exportar a Excel (NUEVO) #}
+            {# Botón de Exportar a Excel #}
             <div>
                 <button
                     type="submit"
@@ -82,6 +82,9 @@
                     <th style="padding: 12px; border-bottom: 2px solid #dee2e6; text-align: left;">ID Venta</th>
                     <th style="padding: 12px; border-bottom: 2px solid #dee2e6; text-align: left;">Fecha y Hora</th>
                     <th style="padding: 12px; border-bottom: 2px solid #dee2e6; text-align: left;">Vendedor</th>
+
+                    <th style="padding: 12px; border-bottom: 2px solid #dee2e6; text-align: left;">Comprador (ID Fiscal)</th>
+
                     <th style="padding: 12px; border-bottom: 2px solid #dee2e6; text-align: left;">Método de Pago</th>
                     <th style="padding: 12px; border-bottom: 2px solid #dee2e6; text-align: right;">Total</th>
                 </tr>
@@ -92,6 +95,16 @@
                     <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">{{ sale.id }}</td>
                     <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">{{ sale.sale_date|date:"Y-m-d H:i" }}</td>
                     <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">{{ sale.cash_drawer_session.user.username }}</td>
+
+                    <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">
+                        {% if sale.client %}
+                            {{ sale.client.tax_id }}
+                            {% if sale.client.company_name %}<br/>({{ sale.client.company_name }}){% endif %}
+                        {% else %}
+                            Consumidor Final
+                        {% endif %}
+                    </td>
+
                     <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">{{ sale.get_payment_method_display }}</td>
                     <td style="padding: 12px; border-bottom: 1px solid #dee2e6; text-align: right; font-weight: bold;">${{ sale.total_amount|floatformat:2 }}</td>
                 </tr>

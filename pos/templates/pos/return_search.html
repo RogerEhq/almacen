@@ -1,0 +1,22 @@
+{% extends 'base.html' %} 
+
+{% block title %}Buscar Venta para Devolución{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>🔍 Buscar Venta para Devolución</h2>
+    <p>Introduce el ID de la venta a la cual deseas aplicar una devolución.</p>
+
+    {% if error %}
+    <div class="alert alert-danger">{{ error }}</div>
+    {% endif %}
+
+    <form method="POST">
+        {% csrf_token %}
+        <div class="input-group mb-3" style="max-width: 400px;">
+            <input type="number" name="sale_id" class="form-control" placeholder="ID de Venta (Ej: 100)" required>
+            <button class="btn btn-primary" type="submit">Buscar Venta</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

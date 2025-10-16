@@ -117,3 +117,60 @@ class Client(models.Model):
         if self.company_name:
             return f"{self.company_name} ({self.tax_id})"
         return f"{self.first_name} {self.last_name or ''}"
+
+
+class SaleReturn(models.Model):
+    """Modelo para registrar una solicitud de devolución completa."""
+    original_sale = models.ForeignKey(
+        'Sale',
+        on_delete=models.CASCADE,
+        verbose_name="Venta Original",
+        related_name="returns"
+    )
+    returned_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Devolución")
+    returned_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        verbose_name="Procesado por"
+    )
+    motive = models.TextField(blank=True, verbose_name="Motivo")
+    total_refund_amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        verbose_name="Monto Reembolsado"
+    )
+
+    def __str__(self):
+        return f"Devolución de Venta #{self.original_sale.id} ({self.returned_at.strftime('%Y-%m-%d')})"
+
+    class Meta:
+        verbose_name = "Devolución de Venta"
+        verbose_name_plural = "Devoluciones de Ventas"
+
+
+class SaleReturnItem(models.Model):
+    """Modelo para registrar qué productos y cantidades se devolvieron."""
+    return_request = models.ForeignKey(
+        SaleReturn,
+        on_delete=models.CASCADE,
+        related_name="items"
+    )
+    product = models.ForeignKey(
+        'Product',
+        on_delete=models.CASCADE
+    )
+    quantity = models.PositiveIntegerField(verbose_name="Cantidad Devuelta")
+    refund_amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name="Monto Reembolsado por Artículo"
+    )
+
+    def __str__(self):
+        return f"{self.quantity} x {self.product.name} devuelto"
+
+    class Meta:
+        verbose_name = "Artículo Devuelto"
+        verbose_name_plural = "Artículos Devueltos"

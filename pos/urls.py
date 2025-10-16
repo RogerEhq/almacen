@@ -38,4 +38,6 @@ urlpatterns = [
     path('clientes/editar/<int:client_id>/', views.client_edit_view, name='client_edit'),
     path('clientes/eliminar/<int:client_id>/', views.client_delete_view, name='client_delete'),
     path('ajax/clientes/buscar/', views.client_search_ajax, name='client_search_ajax'),
+    path('devoluciones/', views.return_search_view, name='return_search'),
+    path('devoluciones/procesar/<int:sale_id>/', views.process_return_view, name='process_return'),
 ]

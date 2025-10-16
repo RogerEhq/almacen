@@ -133,6 +133,7 @@
     .nav-grid form:nth-child(2) .btn-nav-action { background-color: #28a745; } /* Resumen Mensual (Verde) */
     .nav-grid form:nth-child(3) .btn-nav-action { background-color: #ffc107; color: #343a40; } /* Inventario Proveedor (Amarillo/Negro) */
     .nav-grid form:nth-child(4) .btn-nav-action { background-color: #dc3545; } /* Reporte Ventas (Rojo) */
+    .nav-grid form:nth-child(5) .btn-nav-action { background-color: #6f42c1; } /* Devolución (Púrpura) */
 
 </style>
 {% endblock %}
@@ -229,6 +230,14 @@
                 Inventario por Proveedor
             </button>
         </form>
+
+        <form method="get" action="{% url 'return_search' %}">
+            <button type="submit" class="btn-nav-action" style="background-color: #6f42c1;">
+                <i class="fas fa-undo"></i>
+                Procesar Devolución
+            </button>
+        </form>
+
     </div>
 </div>
 {% endblock %}
