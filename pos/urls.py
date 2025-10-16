@@ -31,4 +31,6 @@ urlpatterns = [
     # 3. Resumen Mensual
     path('reports/monthly-summary/', monthly_summary_view, name='monthly_summary'),
     # NOTA: La ruta 'inicio/' y la segunda 'add-product/' se han eliminado por duplicación/redundancia.
+    path('inventario/alerta-stock/', views.low_inventory_alert_view, name='low_inventory_alert'),
+    path('productos/editar/<int:product_id>/', views.product_edit_view, name='product_edit'),
 ]

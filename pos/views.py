@@ -2,7 +2,7 @@ import datetime
 from glob import escape
 from datetime import datetime
 from django.contrib.auth.decorators import login_required, user_passes_test
-from django.forms import DecimalField
+from django.forms import DecimalField, models
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views.decorators.http import require_POST
 from django.http import HttpResponse
@@ -12,7 +12,9 @@ from django.utils import timezone
 from decimal import Decimal
 from django.contrib.auth import logout
 from openpyxl import Workbook
+from django.db.models import F
 
+from .forms import ProductForm, StockUpdateForm
 from .models import Product, Sale, SaleItem, CashDrawerSession, Supplier
 from django.db.models.functions import ExtractYear, ExtractMonth
 from reportlab.lib import colors
@@ -301,6 +303,7 @@ def home_dispatch_view(request):
 def is_admin_staff(user):
     return user.is_staff or user.is_superuser
 
+
 @user_passes_test(is_admin_staff)
 @login_required
 def dashboard_view(request):
@@ -325,12 +328,19 @@ def dashboard_view(request):
                        .annotate(total_sold=Sum('quantity')) \
                        .order_by('-total_sold')[:5]
 
+    # 🎯 NUEVA LÓGICA: Contar productos con inventario bajo (HU #16)
+    # Filtra los productos donde el stock actual es menor o igual al umbral definido.
+    low_stock_count = Product.objects.filter(
+        stock__lte=F('low_stock_threshold')
+    ).count()
+
     context = {
         'ventas_hoy': total_sales,
         'transacciones_hoy': num_transactions,
         'ticket_promedio': ticket_average,
         'sesiones_activas': active_sessions,
         'top_products': top_products,
+        'low_stock_count': low_stock_count,  # <<-- Se añade el conteo al contexto
     }
 
     return render(request, 'pos/dashboard.html', context)
@@ -619,3 +629,44 @@ def export_sales_excel(request, sales_queryset, date_range):
     # 5. Guardar el Workbook en la respuesta HTTP
     wb.save(response)
     return response
+
+
+@user_passes_test(is_admin_staff)
+@login_required
+def low_inventory_alert_view(request):
+    """
+    Muestra la lista de productos cuyo stock es bajo.
+    """
+    # El filtro ahora funciona correctamente porque F está importado desde django.db.models
+    low_stock_products = Product.objects.filter(
+        stock__lte=F('low_stock_threshold')
+    ).order_by('stock')
+
+    context = {
+        'products': low_stock_products,
+        'alert_count': low_stock_products.count(),
+    }
+
+    return render(request, 'pos/low_inventory_alert.html', context)
+
+
+@user_passes_test(is_admin_staff)
+@login_required
+def product_edit_view(request, product_id):
+    product = get_object_or_404(Product, id=product_id)
+
+    if request.method == 'POST':
+        # 🎯 Usamos el formulario ligero aquí
+        form = StockUpdateForm(request.POST, instance=product)
+        if form.is_valid():
+            form.save()
+            # Opcional: Agregar mensaje de éxito
+            # messages.success(request, f"Stock de {product.name} actualizado con éxito.")
+            return redirect('low_inventory_alert')
+    else:
+        # 🎯 Usamos el formulario ligero para mostrar
+        form = StockUpdateForm(instance=product)
+
+    # Cambiamos el nombre del template si vas a crear uno nuevo,
+    # pero si solo quieres modificar el actual, lo mantienes.
+    return render(request, 'pos/product_form.html', {'form': form, 'product': product})

@@ -23,7 +23,11 @@ class Product(models.Model):
     stock = models.PositiveIntegerField(default=0, verbose_name="Cantidad en Stock")
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Categoría")
     supplier = models.ForeignKey(Supplier, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Proveedor")
-
+    low_stock_threshold = models.PositiveIntegerField(
+        default=5,
+        verbose_name="Umbral de Stock Bajo",
+        help_text="Stock mínimo para disparar una alerta."
+    )
     def __str__(self): return self.name
 
 
