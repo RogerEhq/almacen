@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block title %}Resumen Mensual | Reportes{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">📈 Resumen de Ventas Agrupado por Mes</h1>
+    <p class="text-muted">Totaliza las ventas por mes y año para una visión histórica del rendimiento.</p>
+
+    <table class="table table-bordered table-striped table-responsive-sm">
+        <thead class="thead-dark">
+            <tr>
+                <th>Periodo</th>
+                <th class="text-right">Ventas Totales</th>
+                <th class="text-right">N° Transacciones</th>
+                <th class="text-right">Ticket Promedio</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for summary in monthly_sales %}
+            <tr>
+                <td>
+                    <span class="font-weight-bold">
+                        {% if summary.month == 1 %}Enero{% elif summary.month == 2 %}Febrero{% elif summary.month == 3 %}Marzo{% elif summary.month == 4 %}Abril{% elif summary.month == 5 %}Mayo{% elif summary.month == 6 %}Junio{% elif summary.month == 7 %}Julio{% elif summary.month == 8 %}Agosto{% elif summary.month == 9 %}Septiembre{% elif summary.month == 10 %}Octubre{% elif summary.month == 11 %}Noviembre{% elif summary.month == 12 %}Diciembre{% endif %}
+                        {{ summary.year }}
+                    </span>
+                </td>
+                <td class="text-right h5 text-success">${{ summary.total_amount|floatformat:2 }}</td>
+                <td class="text-right">{{ summary.total_transactions }}</td>
+                <td class="text-right">${{ summary.ticket_promedio|floatformat:2 }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4" class="text-center">Aún no hay ventas registradas para generar el resumen mensual.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

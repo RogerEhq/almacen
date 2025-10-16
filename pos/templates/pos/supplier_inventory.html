@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block title %}Inventario | {{ supplier.name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <a href="{% url 'dashboard' %}" class="btn btn-secondary btn-sm mb-3">← Volver al Dashboard</a>
+    
+    <h1 class="mb-4">🚚 Inventario del Proveedor: {{ supplier.name }}</h1>
+    
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card p-3 bg-light">
+                <h5 class="text-muted">Valor Total de Inventario del Proveedor</h5>
+                <p class="h3 text-primary">${{ total_stock_value|floatformat:2 }}</p>
+                <small class="text-muted">(Suma del costo de todos los productos en stock)</small>
+            </div>
+        </div>
+    </div>
+
+    <h2>Productos de {{ supplier.name }}</h2>
+    <table class="table table-bordered table-striped">
+        <thead class="thead-light">
+            <tr>
+                <th>SKU</th>
+                <th>Nombre del Producto</th>
+                <th>Categoría</th>
+                <th>Costo Unitario</th>
+                <th>Stock</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for product in products %}
+            <tr>
+                <td>{{ product.sku }}</td>
+                <td>{{ product.name }}</td>
+                <td>{{ product.category.name|default:"N/A" }}</td>
+                <td>${{ product.cost|floatformat:2 }}</td>
+                <td class="font-weight-bold">{{ product.stock }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" class="text-center">Este proveedor no tiene productos asignados en el inventario.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

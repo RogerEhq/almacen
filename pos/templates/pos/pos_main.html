@@ -7,259 +7,381 @@
     <title>POS | Punto de Venta</title>
     <meta name="csrf-token" content="{{ csrf_token }}">
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* BASE Y LAYOUT GENERAL */
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        :root {
+            --primary: #4361ee;
+            --primary-dark: #3a56d4;
+            --secondary: #3f37c9;
+            --success: #4cc9f0;
+            --danger: #f72585;
+            --warning: #f8961e;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+            --border-radius: 12px;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.12);
+            --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
+            --shadow-lg: 0 10px 15px rgba(0,0,0,0.1);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            box-sizing: border-box;
             margin: 0;
-            background-color: #eef1f5; /* Fondo suave */
-            color: #333;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: #f5f7fb;
+            color: var(--dark);
+            line-height: 1.6;
         }
 
         .pos-container {
             display: flex;
             max-width: 1400px;
-            height: 95vh; /* Ocupa casi toda la altura de la pantalla */
+            height: 95vh;
             margin: 2.5vh auto;
-            background-color: #fff;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15); /* Sombra profesional */
-            border-radius: 16px;
+            background-color: white;
+            box-shadow: var(--shadow-lg);
+            border-radius: var(--border-radius);
             overflow: hidden;
+            position: relative;
         }
 
         .cart-area {
             width: 65%;
-            padding: 30px 40px;
-            border-right: 1px solid #e0e0e0;
+            padding: 30px;
+            border-right: 1px solid rgba(0,0,0,0.05);
             display: flex;
-            flex-direction: column; /* Habilita el layout vertical con flexbox */
+            flex-direction: column;
+            background: white;
         }
 
-        /* ENCABEZADO Y SESIÓN */
         h1 {
-            color: #1e40af; /* Azul oscuro corporativo */
-            margin-top: 0;
-            font-size: 2.2em;
+            color: var(--primary);
+            margin: 0 0 10px 0;
+            font-size: 2rem;
             font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
-        /* Información de sesión y controles */
+        h1 i {
+            font-size: 1.8rem;
+        }
+
         .pos-header-info {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 2px solid #e6e9f5;
-            padding-bottom: 15px;
-            margin-bottom: 25px;
-            font-size: 0.95em;
+            padding: 15px 0;
+            margin-bottom: 20px;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            font-size: 0.95rem;
         }
+
         .pos-header-info p {
             margin: 0;
-            padding: 0;
-            border: none;
+            color: var(--gray);
         }
-        .pos-header-info span#cash-balance { font-weight: bold; color: #28a745; font-size: 1.1em; }
 
-        /* Estilos para los botones/enlaces de la sesión */
-        .session-controls a {
-            color: #007bff;
+        .pos-header-info b {
+            color: var(--dark);
+        }
+
+        #cash-balance {
+            font-weight: bold;
+            color: var(--primary);
+            background: rgba(67, 97, 238, 0.1);
+            padding: 3px 8px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+
+        .session-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .session-controls a, .session-controls button {
+            font-size: 0.9rem;
             text-decoration: none;
-            transition: color 0.2s;
-            margin-left: 15px;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 5px;
         }
-        .session-controls a:hover { color: #0056b3; text-decoration: underline; }
 
-        .session-controls button[type="submit"] {
+        .session-controls a {
+            color: var(--primary);
+        }
+
+        .session-controls a:hover {
+            color: var(--primary-dark);
+        }
+
+        .session-controls button {
             background: none;
             border: none;
-            color: #dc3545; /* Rojo para acción de cierre/logout */
+            color: var(--danger);
             cursor: pointer;
             padding: 0;
-            font-family: inherit;
-            font-size: 1em;
-            text-decoration: underline;
-            transition: color 0.2s;
-            margin-left: 15px;
-        }
-        .session-controls button[type="submit"]:hover {
-             color: #a71d2a;
         }
 
+        .session-controls button:hover {
+            color: #d11450;
+        }
 
-        /* BÚSQUEDA DE PRODUCTO (El Foco de la UX) */
+        #product-search {
+            margin-bottom: 25px;
+        }
+
         #product-search h2 {
-            margin-top: 10px;
-            color: #495057;
-            font-size: 1.2em;
+            margin-bottom: 10px;
+            font-size: 1rem;
+            color: var(--gray);
             font-weight: 500;
         }
+
         #sku-input {
-            width: 90%; /* Ajustado al 90% para dejar espacio para la sombra */
-            padding: 22px; /* Más grande para facilidad de uso */
-            margin-bottom: 30px;
-            border: 1px solid #ccc;
-            border-radius: 10px;
-            font-size: 1.6em;
-            font-weight: 600;
-            transition: all 0.3s;
-            box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+            width: 100%;
+            padding: 18px 20px;
+            border: 2px solid rgba(0,0,0,0.1);
+            border-radius: var(--border-radius);
+            font-size: 1.2rem;
+            font-weight: 500;
+            transition: var(--transition);
+            box-shadow: var(--shadow-sm);
         }
+
         #sku-input:focus {
-            border-color: #1e40af; /* Azul de enfoque */
-            box-shadow: 0 0 8px rgba(30, 64, 175, 0.4);
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
             outline: none;
-            background-color: #fff;
         }
 
+        #sku-input::placeholder {
+            color: rgba(0,0,0,0.3);
+            font-weight: 400;
+        }
 
-        /* TABLA DE CARRITO */
         #cart-section {
-            flex-grow: 1; /* Permite que el carrito crezca para llenar el espacio */
-            overflow-y: auto; /* Permite desplazamiento */
+            flex-grow: 1;
+            overflow-y: auto;
+            margin-bottom: 20px;
         }
+
         #cart-section h2 {
-            margin-top: 0;
-            color: #1e40af;
-            font-size: 1.6em;
+            font-size: 1.3rem;
             margin-bottom: 15px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
+
         .cart-table {
             width: 100%;
             border-collapse: separate;
             border-spacing: 0;
-            border-radius: 10px;
+            background: white;
+            border-radius: var(--border-radius);
             overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-            margin-bottom: 15px;
+            box-shadow: var(--shadow-sm);
         }
-        .cart-table th, .cart-table td {
-            padding: 15px 20px;
-            text-align: left;
-            border-bottom: 1px solid #f0f0f0;
-        }
+
         .cart-table th {
-            background-color: #eef2ff;
-            color: #1e40af;
+            background: rgba(67, 97, 238, 0.05);
+            color: var(--primary);
             font-weight: 600;
+            font-size: 0.8rem;
             text-transform: uppercase;
-            font-size: 0.9em;
+            letter-spacing: 0.5px;
+            padding: 12px 15px;
+            text-align: left;
         }
-        .cart-table tbody tr:hover { background-color: #f6f8ff; }
 
+        .cart-table td {
+            padding: 15px;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            font-size: 0.95rem;
+        }
 
-        /* ÁREA DE TOTAL (Lo más importante) */
+        .cart-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .cart-table tbody tr:hover {
+            background: rgba(67, 97, 238, 0.03);
+        }
+
         #total-area {
-            font-size: 3em; /* Muy grande */
+            font-size: 1.8rem;
             text-align: right;
-            margin-top: 20px;
+            margin-top: auto;
             padding: 20px 0;
-            color: #28a745; /* Verde de éxito */
+            color: var(--primary);
             font-weight: 700;
-            border-top: 4px solid #28a745; /* Separador grueso */
-            border-bottom: none; /* Asegurar que no tome el estilo de <p> */
+            border-top: 2px solid rgba(67, 97, 238, 0.1);
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 10px;
         }
 
-
-        /* CONTROLES DE PAGO (Checkout) */
         .checkout-controls {
             width: 35%;
-            padding: 40px 30px;
-            background-color: #f7f9fc;
-            border-left: 1px solid #e0e0e0;
-            border-radius: 0 16px 16px 0;
-            display: flex;
-            flex-direction: column; /* Habilita el layout vertical con flexbox */
-        }
-
-        /* Flexbox para empujar el botón al fondo de la columna */
-        #checkout-form {
+            padding: 30px;
+            background: linear-gradient(135deg, #f5f7fb 0%, #e8ecf4 100%);
             display: flex;
             flex-direction: column;
-            flex-grow: 1; /* Permitir que el formulario crezca */
         }
 
         .checkout-controls h3 {
-            color: #1e40af;
-            border-bottom: 1px solid #cceeff;
-            padding-bottom: 15px;
-            margin-top: 0;
-            font-size: 1.8em;
-            font-weight: 600;
+            font-size: 1.5rem;
+            margin-bottom: 25px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
+
         .checkout-controls h4 {
-            color: #495057;
-            margin-top: 30px;
-            font-size: 1.2em;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 10px;
+            font-size: 1rem;
+            margin: 20px 0 15px 0;
+            color: var(--gray);
+            font-weight: 500;
         }
 
         .payment-select {
-            margin-bottom: 40px;
-        }
-        .payment-select label {
-            display: block;
-            margin-bottom: 10px;
-            padding: 15px;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 1.2em;
-            transition: background-color 0.2s, border-color 0.2s;
-            cursor: pointer;
-            text-align: left;
-            background-color: #fff;
-        }
-        .payment-select label:hover {
-            background-color: #f6f8ff;
-            border-color: #007bff;
-        }
-        .payment-select input[type="radio"] {
-            margin-right: 15px;
-            transform: scale(1.2);
-            accent-color: #1e40af;
+            margin-bottom: 30px;
         }
 
-        /* BOTÓN FINALIZAR VENTA */
+        .payment-select label {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            margin-bottom: 10px;
+            background: white;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: var(--transition);
+            box-shadow: var(--shadow-sm);
+            font-size: 0.95rem;
+        }
+
+        .payment-select label:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .payment-select input[type="radio"] {
+            margin-right: 10px;
+            accent-color: var(--primary);
+        }
+
+        #checkout-form {
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+        }
+
         .checkout-controls button[type="submit"] {
             width: 100%;
-            padding: 25px; /* Más grande para ser un gran botón de acción */
-            background-color: #28a745;
+            padding: 18px;
+            background: var(--primary);
             color: white;
             border: none;
-            border-radius: 10px;
-            font-size: 1.7em;
-            font-weight: 700;
+            border-radius: var(--border-radius);
+            font-size: 1.1rem;
+            font-weight: 600;
             cursor: pointer;
-            transition: background-color 0.3s, transform 0.1s;
-            text-transform: uppercase;
-            box-shadow: 0 6px 15px rgba(40, 167, 69, 0.4);
-            margin-top: auto; /* <---- Empuja el botón al fondo */
-        }
-        .checkout-controls button[type="submit"]:hover {
-            background-color: #1e7e34;
-            transform: translateY(-3px);
-        }
-        .checkout-controls button[type="submit"][disabled] {
-            background-color: #adb5bd;
-            cursor: not-allowed;
-            opacity: 0.8;
-            color: #6c757d;
-            transform: none;
-            box-shadow: none;
+            transition: var(--transition);
+            margin-top: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: var(--shadow-md);
         }
 
-        /* MENSAJE DE CONFIRMACIÓN */
+        .checkout-controls button[type="submit"]:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .checkout-controls button[type="submit"]:active {
+            transform: translateY(0);
+        }
+
+        .checkout-controls button[type="submit"][disabled] {
+            background: var(--gray);
+            cursor: not-allowed;
+            opacity: 0.7;
+            transform: none !important;
+        }
+
         #confirmation-area {
             margin-top: 20px;
         }
+
         .success-message {
-            background: #d4edda;
-            border: 1px solid #c3e6cb;
-            color: #155724;
+            background: rgba(76, 201, 240, 0.1);
+            border: 1px solid rgba(76, 201, 240, 0.3);
+            color: var(--primary-dark);
             padding: 15px;
-            border-radius: 8px;
-            font-weight: bold;
+            border-radius: var(--border-radius);
+            font-size: 0.9rem;
             text-align: center;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.05);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(67, 97, 238, 0.3);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(67, 97, 238, 0.5);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 1200px) {
+            .pos-container {
+                flex-direction: column;
+                height: auto;
+                min-height: 95vh;
+            }
+
+            .cart-area, .checkout-controls {
+                width: 100%;
+            }
+
+            .cart-area {
+                border-right: none;
+                border-bottom: 1px solid rgba(0,0,0,0.05);
+            }
         }
     </style>
 </head>
@@ -267,7 +389,7 @@
 
 <div class="pos-container">
     <div class="cart-area">
-        <h1>Punto de Venta</h1>
+        <h1><i class="fas fa-cash-register"></i> Punto de Venta</h1>
 
         <div class="pos-header-info">
             <p>Vendedor: <b>{{ user.username }}</b>
@@ -275,23 +397,24 @@
                 {% if active_session %}
                     <span id="cash-balance">${{ active_session.starting_balance|floatformat:2 }}</span>
                 {% else %}
-                    <span style="color: red;">No activa</span>
+                    <span style="color: var(--danger);">No activa</span>
                 {% endif %}
             </p>
             <div class="session-controls">
                 <a href="{% url 'close_session' %}" {% if not active_session %}style="pointer-events: none; color: gray;"{% endif %}>
-                    Cerrar Caja
+                    <i class="fas fa-lock"></i> Cerrar Caja
                 </a>
                 <form style="display:inline;" method="post" action="{% url 'logout' %}">
                     {% csrf_token %}
                     <button type="submit">
-                        Cerrar Sesión
+                        <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
                     </button>
                 </form>
             </div>
         </div>
+
         <div id="product-search">
-            <h2>Escanear o Buscar Producto</h2>
+            <h2><i class="fas fa-barcode"></i> Escanear o Buscar Producto</h2>
             <input
                 type="text"
                 name="sku"
@@ -310,20 +433,28 @@
 
         <div
             hx-post="{% url 'update_total' %}"
-            hx-trigger="htmx:afterOnLoad from:#sku-input"
+            hx-trigger="htmx:afterOnLoad from:#sku-input, htmx:afterOnLoad from:#cart-body"
             hx-target="#total-area"
             hx-swap="outerHTML"
             style="display:none;"
         ></div>
 
+        <div
+            hx-trigger="htmx:afterOnLoad from:#sku-input, htmx:afterOnLoad from:#cart-body"
+            hx-target="body"
+            hx-on="htmx:afterOnLoad:checkCartAndEnableButton()"
+            style="display:none;"
+        ></div>
+
+
         <div id="cart-section">
-            <h2>Detalle de Venta</h2>
+            <h2><i class="fas fa-shopping-cart"></i> Detalle de Venta</h2>
             <table class="cart-table">
                 <thead>
                     <tr>
                         <th>SKU</th>
                         <th>Nombre</th>
-                        <th>Precio Unitario</th>
+                        <th>Precio</th>
                         <th>Cantidad</th>
                         <th>Subtotal</th>
                     </tr>
@@ -336,11 +467,11 @@
             </table>
         </div>
 
-        <h3 id="total-area">Total: ${{ cart_total|floatformat:2 }}</h3>
+        <h3 id="total-area"><i class="fas fa-receipt"></i> Total: ${{ cart_total|floatformat:2 }}</h3>
     </div>
 
     <div class="checkout-controls">
-        <h3>Finalizar Venta</h3>
+        <h3><i class="fas fa-credit-card"></i> Finalizar Venta</h3>
         <form
             hx-post="{% url 'checkout' %}"
             hx-target="#confirmation-area"
@@ -348,22 +479,38 @@
             id="checkout-form"
         >
             {% csrf_token %}
-            <h4>Método de Pago (HU #5):</h4>
+            <h4><i class="fas fa-money-bill-wave"></i> Método de Pago:</h4>
             <div class="payment-select">
                 <label>
-                    <input type="radio" name="payment_method" value="cash" checked> Efectivo
+                    <input type="radio" name="payment_method" value="cash" checked>
+                    <i class="fas fa-money-bill-alt"></i> Efectivo
                 </label>
                 <label>
-                    <input type="radio" name="payment_method" value="card"> Tarjeta
+                    <input type="radio" name="payment_method" value="card">
+                    <i class="fas fa-credit-card"></i> Tarjeta
                 </label>
             </div>
-            <button type="submit">Finalizar Venta</button>
+            <button type="submit" id="checkout-button" {% if not cart_items %}disabled{% endif %}>
+                <i class="fas fa-check-circle"></i> Finalizar Venta
+            </button>
         </form>
         <div id="confirmation-area"></div>
     </div>
 </div>
 
 <script>
+    // Función para verificar si el carrito tiene ítems y habilitar el botón
+    function checkCartAndEnableButton() {
+        const cartBody = document.getElementById('cart-body');
+        const checkoutBtn = document.getElementById('checkout-button');
+
+        if (cartBody && checkoutBtn) {
+            // Si el tbody tiene filas (<tr>), el carrito no está vacío
+            const hasItems = cartBody.children.length > 0;
+            checkoutBtn.disabled = !hasItems;
+        }
+    }
+
     // Añadir el token CSRF a cada solicitud HTMX
     document.body.addEventListener('htmx:configRequest', function(event) {
         const token = document.querySelector('meta[name="csrf-token"]').content;
@@ -380,14 +527,37 @@
             skuInput.value = '';
             skuInput.focus();
         }
+
+        // Ejecutar la verificación después de cualquier solicitud de carrito/total
+        if (evt.detail.target.id === 'cart-body' || evt.detail.target.id === 'total-area') {
+            checkCartAndEnableButton();
+        }
     });
 
     // Limpiar carrito visualmente después de venta
     document.body.addEventListener('htmx:afterOnLoad', function(evt) {
         if (evt.detail.target.id === 'confirmation-area') {
             document.getElementById('cart-body').innerHTML = '';
-            document.getElementById('total-area').innerHTML = 'Total: $0.00';
+            document.getElementById('total-area').innerHTML = '<i class="fas fa-receipt"></i> Total: $0.00';
+
+            // Disable checkout button
+            const checkoutBtn = document.getElementById('checkout-button');
+            if (checkoutBtn) {
+                checkoutBtn.disabled = true;
+            }
         }
+
+        // La función checkCartAndEnableButton se ejecutará automáticamente aquí si se usa el htmx:afterOnLoad from:#sku-input
+    });
+
+    // Auto-focus SKU input when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        const skuInput = document.getElementById('sku-input');
+        if (skuInput && !skuInput.disabled) {
+            skuInput.focus();
+        }
+        // Ejecutar al cargar la página para reflejar el estado inicial
+        checkCartAndEnableButton();
     });
 </script>
 

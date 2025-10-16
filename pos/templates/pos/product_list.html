@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% block title %}Inventario Detallado | POS{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">📦 Inventario de Productos ({{ products|length }} Ítems)</h1>
+
+    <div class="card p-3 mb-4">
+        <form method="get" class="form-inline">
+            <label for="filter" class="mr-2 font-weight-bold">Filtrar:</label>
+            <select name="filter" id="filter" class="form-control mr-3" onchange="this.form.submit()">
+                <option value="all" {% if current_filter == 'all' %}selected{% endif %}>Todos los Productos</option>
+                <option value="low_stock" {% if current_filter == 'low_stock' %}selected{% endif %}>Stock Bajo (≤ 5) - {{ low_stock_count }}</option>
+            </select>
+        </form>
+    </div>
+
+    <table class="table table-striped table-hover">
+        <thead class="thead-dark">
+            <tr>
+                <th>SKU</th>
+                <th>Nombre</th>
+                <th>Stock Actual</th>
+                <th>Costo</th>
+                <th>Precio Venta</th>
+                <th>Categoría</th>
+                <th>Proveedor</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for product in products %}
+            {% if product.stock <= 5 and product.stock > 0 %}
+                <tr class="table-warning"> {% elif product.stock == 0 %}
+                <tr class="table-danger"> {% else %}
+                <tr>
+            {% endif %}
+                <td>{{ product.sku }}</td>
+                <td>
+                    {{ product.name }}
+                    {% if product.stock <= 5 and product.stock > 0 %}
+                        <span class="badge badge-warning ml-2">¡Bajo Stock!</span>
+                    {% elif product.stock == 0 %}
+                        <span class="badge badge-danger ml-2">AGOTADO</span>
+                    {% endif %}
+                </td>
+                <td class="font-weight-bold">{{ product.stock }}</td>
+                <td>${{ product.cost|floatformat:2 }}</td>
+                <td>${{ product.price|floatformat:2 }}</td>
+                <td>{{ product.category.name|default:"N/A" }}</td>
+                <td>{{ product.supplier.name|default:"N/A" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" class="text-center">No se encontraron productos con los filtros aplicados.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

@@ -1,6 +1,7 @@
 # pos/urls.py
 from django.urls import path
 from . import views
+from .views import product_list_view, supplier_inventory_view, monthly_summary_view
 
 urlpatterns = [
     # Rutas de Caja (Sprint 3)
@@ -22,6 +23,12 @@ urlpatterns = [
     # Rutas de BI/Admin (Sprint 4)
     path('dashboard/', views.dashboard_view, name='dashboard'),
     path('reports/sales/', views.sales_report_view, name='sales_report'),
+    path('inventory/products/', product_list_view, name='product_list'),
 
+    # 2. Inventario por Proveedor (Requiere el ID del proveedor)
+    path('inventory/suppliers/<int:supplier_id>/', supplier_inventory_view, name='supplier_inventory'),
+
+    # 3. Resumen Mensual
+    path('reports/monthly-summary/', monthly_summary_view, name='monthly_summary'),
     # NOTA: La ruta 'inicio/' y la segunda 'add-product/' se han eliminado por duplicación/redundancia.
 ]

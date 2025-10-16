@@ -127,7 +127,7 @@
             background-color: #f7f9fc;
         }
 
-        /* --- ESTILOS DE FORMULARIOS Y BOTONES --- */
+        /* --- ESTILOS DE FORMULARIOS Y BOTONES (DEFAULT) --- */
         input[type="text"], input[type="number"], input[type="date"], select, textarea {
             padding: 12px;
             border: 1px solid #ccc;
@@ -232,7 +232,69 @@
             border: 1px solid #f5c6cb;
         }
 
+        /* ---------------------------------------------------------------------- */
+        /* ✅ ESTILOS PARA BOTONES DE NAVEGACIÓN RÁPIDA (btn-nav-action) */
+        /* ---------------------------------------------------------------------- */
+        .nav-grid {
+            /* Contenedor de la barra de botones */
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px; /* Espacio entre los botones */
+            margin-top: 20px;
+            padding: 15px 0;
+        }
+
+        /* Estilo base para el botón de navegación (Pastilla y 3D) */
+        .btn-nav-action {
+            display: inline-flex;
+            align-items: center;
+            color: white;
+            padding: 10px 18px;
+            border-radius: 25px; /* Forma de pastilla */
+            font-weight: 600;
+            font-size: 0.95em;
+            transition: all 0.2s ease-in-out;
+            gap: 8px;
+            border: none;
+            background-color: #3b82f6; /* Azul primario por defecto */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.25); /* Sombra 3D */
+            cursor: pointer;
+        }
+
+        .btn-nav-action:hover {
+            background-color: #1e40af;
+            transform: translateY(-2px); /* Efecto de elevación */
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.35); /* Sombra más fuerte al pasar el ratón */
+        }
+
+        /* Estilo del ICONO dentro del botón */
+        .btn-nav-action i {
+            font-size: 1em;
+            color: white;
+            padding: 0;
+            width: auto;
+            height: auto;
+            box-shadow: none;
+            background-color: transparent;
+        }
+
+        /* Colores y Emotes Únicos para los Botones de Reportes */
+        /* 1. Inventario Detallado y Stock Bajo (Cyan - Enfoque en Stock) */
+        .nav-grid form:nth-child(1) .btn-nav-action {
+            background-color: #17a2b8; /* Cyan */
+        }
+        /* 2. Resumen Agrupado de Ventas Mensuales (Verde - Enfoque en Ganancia/Reporte) */
+        .nav-grid form:nth-child(2) .btn-nav-action {
+            background-color: #28a745; /* Verde */
+        }
+        /* 3. Inventario por Proveedor (Amarillo/Naranja - Enfoque en Logística) */
+        .nav-grid form:nth-child(3) .btn-nav-action {
+            background-color: #ffc107; /* Amarillo/Naranja */
+            color: #343a40; /* Texto oscuro para contraste en fondo claro */
+        }
+
     </style>
+    {% block extra_styles %}{% endblock %}
 </head>
 <body>
 

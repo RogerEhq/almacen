@@ -2,16 +2,18 @@ import datetime
 from glob import escape
 from datetime import datetime
 from django.contrib.auth.decorators import login_required, user_passes_test
+from django.forms import DecimalField
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views.decorators.http import require_POST
 from django.http import HttpResponse
 from django.db import transaction
-from django.db.models import Sum, Count, Q
+from django.db.models import Sum, Count, Q, ExpressionWrapper, F
 from django.utils import timezone
 from decimal import Decimal
 from django.contrib.auth import logout
 
-from .models import Product, Sale, SaleItem, CashDrawerSession
+from .models import Product, Sale, SaleItem, CashDrawerSession, Supplier
+from django.db.models.functions import ExtractYear, ExtractMonth
 
 
 # --- Redirección inicial tras login ---
@@ -374,3 +376,96 @@ def sales_report_view(request):
         'totals': totals,
     }
     return render(request, 'pos/sales_report.html', context)
+
+
+# --- 1. Lista de Productos con Stock Bajo ---
+@user_passes_test(is_admin_staff)
+@login_required
+def product_list_view(request):
+    """Muestra una lista paginada de productos con opciones de filtro."""
+
+    # Parámetros de filtro
+    filter_by = request.GET.get('filter', 'all')
+
+    products = Product.objects.select_related('category', 'supplier').all()
+
+    if filter_by == 'low_stock':
+        # Asumiendo que 'low_stock' se define como 5 unidades o menos
+        products = products.filter(stock__lte=5)
+
+    # Puedes implementar paginación aquí si la lista es muy grande
+
+    context = {
+        'products': products,
+        'current_filter': filter_by,
+        'low_stock_count': Product.objects.filter(stock__lte=5).count()
+    }
+
+    return render(request, 'pos/product_list.html', context)
+
+
+# --- 2. Inventario por Proveedor ---
+@user_passes_test(is_admin_staff)
+@login_required
+def supplier_inventory_view(request, supplier_id):
+    """Muestra los productos de un proveedor específico."""
+
+    # Asume que el modelo Supplier está importado
+    supplier = get_object_or_404(Supplier, pk=supplier_id)
+
+    # 1. Traer todos los productos del proveedor
+    # No usamos ninguna anotación o expresión compleja aquí.
+    products = Product.objects.filter(supplier=supplier).select_related('category')
+
+    total_stock_value = Decimal('0.00')
+
+    # 2. ✅ SOLUCIÓN: Calcular el valor total del stock en Python.
+    for product in products:
+        # Multiplicar Costo (Decimal) por Stock (convertido a Decimal)
+        product_stock = Decimal(product.stock)
+        total_stock_value += product.cost * product_stock
+
+    context = {
+        'supplier': supplier,
+        'products': products,
+        'total_stock_value': total_stock_value
+    }
+
+    return render(request, 'pos/supplier_inventory.html', context)
+
+
+# --- 3. Resumen de Ventas Mensuales ---
+@user_passes_test(is_admin_staff)
+@login_required
+def monthly_summary_view(request):
+    """Muestra un resumen de ventas totales agrupadas por mes."""
+
+    # Agrupa las ventas por año y mes
+    monthly_sales = Sale.objects.annotate(
+        year=ExtractYear('sale_date'),
+        month=ExtractMonth('sale_date')
+    ).values('year', 'month').annotate(
+        total_amount=Sum('total_amount'),
+        total_transactions=Count('id')
+    ).order_by('-year', '-month')
+
+    # ✅ CORRECCIÓN CLAVE: Calcular el ticket promedio en Python
+    sales_with_average = []
+    for summary in monthly_sales:
+        num_transactions = summary['total_transactions']
+        total_amount = summary['total_amount']
+
+        # Manejo seguro de la división por cero
+        if num_transactions and total_amount:
+            # Usar Decimal para mantener la precisión financiera
+            summary['ticket_promedio'] = total_amount / Decimal(num_transactions)
+        else:
+            summary['ticket_promedio'] = Decimal('0.00')
+
+        sales_with_average.append(summary)
+
+    context = {
+        'monthly_sales': sales_with_average
+    }
+
+    return render(request, 'pos/monthly_summary.html', context)

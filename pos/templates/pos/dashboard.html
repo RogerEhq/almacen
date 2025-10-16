@@ -81,49 +81,59 @@
     .top-products-section {
         margin-top: 50px;
     }
+    /* ... (Estilos de tabla) ... */
 
-    .top-products-section table {
-        width: 100%;
-        max-width: 600px; /* Limitar el ancho para enfoque */
-        border-collapse: separate;
-        border-spacing: 0;
-        border-radius: 10px;
-        overflow: hidden;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-        background: white;
+    /* ✅ ESTILOS PARA LA BARRA DE BOTONES SÓLIDOS (<form> y <button>) */
+    .nav-grid {
+        /* Contenedor de la barra de botones */
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px; /* Espacio entre los botones */
+        margin-top: 20px;
+        padding: 15px;
+        border-radius: 8px;
     }
 
-    .top-products-section th, .top-products-section td {
-        padding: 15px 20px;
-        text-align: left;
-        border-bottom: 1px solid #e9ecef;
-    }
-
-    .top-products-section th {
-        background-color: #eef2ff;
-        color: #1e40af;
+    /* OJO: Aplicamos el estilo de botón a la clase 'btn-nav-action' en el <button> */
+    .btn-nav-action {
+        display: inline-flex;
+        align-items: center;
+        color: white;
+        padding: 12px 20px;
+        border-radius: 6px;
         font-weight: 600;
-        text-transform: uppercase;
+        font-size: 1em;
+        transition: background-color 0.2s, transform 0.1s;
+        gap: 10px;
+        border: none;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        cursor: pointer;
+        background-color: #3b82f6;
     }
 
-    .top-products-section tbody tr:hover {
-        background-color: #f6f8ff;
+    .btn-nav-action:hover {
+        background-color: #1e40af;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     }
 
-    .top-products-section tbody tr:last-child td {
-        border-bottom: none;
+    /* Estilo del ICONO dentro del botón */
+    .btn-nav-action i {
+        font-size: 1.1em;
+        color: white;
+        padding: 0;
+        width: auto;
+        height: auto;
+        box-shadow: none;
+        background-color: transparent;
     }
 
-    .top-products-section td:last-child {
-        font-weight: bold;
-        color: #343a40;
-    }
+    /* Colores únicos por botón (Usamos :nth-child en el FORM para afectar al button interno) */
+    .nav-grid form:nth-child(1) .btn-nav-action { background-color: #17a2b8; } /* Inventario (Cyan) */
+    .nav-grid form:nth-child(2) .btn-nav-action { background-color: #28a745; } /* Resumen Mensual (Verde) */
+    .nav-grid form:nth-child(3) .btn-nav-action { background-color: #ffc107; color: #343a40; } /* Inventario Proveedor (Amarillo/Negro) */
+    .nav-grid form:nth-child(4) .btn-nav-action { background-color: #dc3545; } /* Reporte Ventas (Rojo) */
 
-    .top-products-section td[colspan="2"] {
-        text-align: center;
-        font-style: italic;
-        color: #999;
-    }
 </style>
 {% endblock %}
 
@@ -134,7 +144,6 @@
     <h2>📅 Métricas del Día (Hoy)</h2>
 
     <div class="metrics-grid">
-
         <div class="metric-card">
             <h3>💰 Ventas Totales Hoy</h3>
             <p>${{ ventas_hoy|floatformat:2 }}</p>
@@ -158,7 +167,6 @@
 
     <div class="top-products-section">
         <h2>🏆 Top 5 Productos Más Vendidos (Histórico)</h2>
-
         <table>
             <thead>
                 <tr>
@@ -179,6 +187,31 @@
                 {% endfor %}
             </tbody>
         </table>
+    </div>
+
+    <h2>⚙️ Navegación Rápida y Reportes Adicionales</h2>
+
+    <div class="nav-grid">
+        <form method="get" action="{% url 'product_list' %}">
+            <button type="submit" class="btn-nav-action">
+                <i class="fas fa-boxes"></i>
+                Inventario Detallado y Stock Bajo
+            </button>
+        </form>
+
+        <form method="get" action="{% url 'monthly_summary' %}">
+            <button type="submit" class="btn-nav-action">
+                <i class="fas fa-chart-bar"></i>
+                Resumen Agrupado de Ventas Mensuales
+            </button>
+        </form>
+
+        <form method="get" action="{% url 'supplier_inventory' supplier_id=1 %}">
+            <button type="submit" class="btn-nav-action">
+                <i class="fas fa-truck-loading"></i>
+                Inventario por Proveedor
+            </button>
+        </form>
     </div>
 </div>
 {% endblock %}
