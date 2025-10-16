@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.forms import DecimalField, models
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views.decorators.http import require_POST
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.db import transaction
 from django.db.models import Sum, Count, Q, ExpressionWrapper, F
 from django.utils import timezone
@@ -14,8 +14,8 @@ from django.contrib.auth import logout
 from openpyxl import Workbook
 from django.db.models import F
 
-from .forms import ProductForm, StockUpdateForm
-from .models import Product, Sale, SaleItem, CashDrawerSession, Supplier
+from .forms import ProductForm, StockUpdateForm, ClientForm
+from .models import Product, Sale, SaleItem, CashDrawerSession, Supplier, Client
 from django.db.models.functions import ExtractYear, ExtractMonth
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
@@ -175,6 +175,18 @@ def checkout_view(request):
     cart = request.session.get('cart', {})
     payment_method = request.POST.get('payment_method', 'cash')
 
+    # 🎯 NUEVO: Lógica para recuperar el Cliente (Comprador)
+    client_id = request.POST.get('client_id')
+    client_instance = None
+    if client_id:
+        try:
+            # Buscar la instancia del cliente por el ID enviado desde el POS
+            client_instance = Client.objects.get(id=client_id)
+        except Client.DoesNotExist:
+            # Si el cliente no se encuentra (ID inválido), se ignora.
+            pass
+    # FIN: Lógica para recuperar el Cliente
+
     if not cart:
         return HttpResponse('<p style="color:red;">No hay productos en el carrito.</p>')
 
@@ -213,7 +225,9 @@ def checkout_view(request):
             seller=request.user,
             total_amount=cart_total,
             cash_drawer_session=active_session,
-            payment_method=payment_method
+            payment_method=payment_method,
+            # 🎯 CAMBIO CLAVE: Se asigna la instancia del cliente
+            client=client_instance
         )
 
         SaleItem.objects.bulk_create([
@@ -670,3 +684,89 @@ def product_edit_view(request, product_id):
     # Cambiamos el nombre del template si vas a crear uno nuevo,
     # pero si solo quieres modificar el actual, lo mantienes.
     return render(request, 'pos/product_form.html', {'form': form, 'product': product})
+
+
+@login_required
+def client_list_view(request):
+    """Muestra una lista de todos los clientes."""
+    clients = Client.objects.all().order_by('last_name')
+    context = {'clients': clients}
+    return render(request, 'pos/client_list.html', context)
+
+
+
+@login_required
+def client_create_view(request):
+    """Permite crear un nuevo cliente."""
+    if request.method == 'POST':
+        form = ClientForm(request.POST)
+        if form.is_valid():
+            form.save()
+            # messages.success(request, "Cliente creado con éxito.")
+            return redirect('client_list')
+    else:
+        form = ClientForm()
+
+    context = {'form': form, 'title': 'Crear Nuevo Cliente'}
+    return render(request, 'pos/client_form.html', context)
+
+
+@login_required
+def client_edit_view(request, client_id):
+    """Permite editar un cliente existente."""
+    client = get_object_or_404(Client, id=client_id)
+
+    if request.method == 'POST':
+        form = ClientForm(request.POST, instance=client)
+        if form.is_valid():
+            form.save()
+            # messages.success(request, "Cliente actualizado con éxito.")
+            return redirect('client_list')
+    else:
+        form = ClientForm(instance=client)
+
+    context = {'form': form, 'client': client, 'title': f'Editar Cliente: {client.first_name}'}
+    return render(request, 'pos/client_form.html', context)
+
+
+@login_required
+def client_delete_view(request, client_id):
+    """Permite eliminar un cliente."""
+    client = get_object_or_404(Client, id=client_id)
+
+    if request.method == 'POST':
+        client.delete()
+        # messages.warning(request, "Cliente eliminado.")
+        return redirect('client_list')
+
+    context = {'client': client}
+    return render(request, 'pos/client_confirm_delete.html', context)
+
+
+@login_required
+def client_search_ajax(request):
+    """
+    Endpoint AJAX para buscar clientes por nombre, empresa o RUC/NIT.
+    """
+    query = request.GET.get('q', '')
+    clients_data = []
+
+    if query:
+        # Busca clientes cuyo nombre, apellido, empresa o tax_id contenga la consulta
+        clients = Client.objects.filter(
+            Q(first_name__icontains=query) |
+            Q(last_name__icontains=query) |
+            Q(company_name__icontains=query) |
+            Q(tax_id__icontains=query)
+        ).distinct()[:10]  # Limitar a 10 resultados para velocidad
+
+        for client in clients:
+            clients_data.append({
+                'id': client.id,
+                'text': str(client),  # Utiliza el __str__ definido en el modelo
+                'tax_id': client.tax_id,
+                'is_professional': client.is_professional
+            })
+
+    return JsonResponse({'results': clients_data})
+

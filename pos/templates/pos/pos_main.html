@@ -471,31 +471,55 @@
     </div>
 
     <div class="checkout-controls">
-        <h3><i class="fas fa-credit-card"></i> Finalizar Venta</h3>
-        <form
-            hx-post="{% url 'checkout' %}"
-            hx-target="#confirmation-area"
-            hx-swap="innerHTML"
-            id="checkout-form"
-        >
-            {% csrf_token %}
-            <h4><i class="fas fa-money-bill-wave"></i> Método de Pago:</h4>
-            <div class="payment-select">
-                <label>
-                    <input type="radio" name="payment_method" value="cash" checked>
-                    <i class="fas fa-money-bill-alt"></i> Efectivo
-                </label>
-                <label>
-                    <input type="radio" name="payment_method" value="card">
-                    <i class="fas fa-credit-card"></i> Tarjeta
-                </label>
-            </div>
-            <button type="submit" id="checkout-button" {% if not cart_items %}disabled{% endif %}>
-                <i class="fas fa-check-circle"></i> Finalizar Venta
-            </button>
-        </form>
-        <div id="confirmation-area"></div>
+    <h3><i class="fas fa-credit-card"></i> Finalizar Venta</h3>
+    <form
+        hx-post="{% url 'checkout' %}"
+        hx-target="#confirmation-area"
+        hx-swap="innerHTML"
+        id="checkout-form"
+    >
+        {% csrf_token %}
+
+    <div class="client-association-section" style="margin-bottom: 20px; padding: 15px; border: 1px solid #ced4da; border-radius: 8px; background: white;">
+        <label for="client-select" style="font-weight: bold; display: block; margin-bottom: 10px;">
+            <i class="fas fa-user-tag"></i> Asociar Venta a Comprador
+        </label>
+
+        <a href="{% url 'client_create' %}"
+           class="btn-new-client"
+           style="display: inline-block; font-size: 0.8rem; padding: 4px 8px; margin-bottom: 10px; background: #2a9d8f; color: white; border: none; border-radius: 5px; cursor: pointer; text-decoration: none;">
+            ➕ Registrar Nuevo Comprador
+        </a>
+        <select id="client-select" style="width: 100%;"></select>
+
+        <input type="hidden" name="client_id" id="client-id-input" value="">
+
+        <p id="client-info" style="margin-top: 10px; font-size: 0.9em; color: #1e40af; font-weight: 500;">
+            Venta registrada como anónima.
+        </p>
     </div>
+    <h4><i class="fas fa-money-bill-wave"></i> Método de Pago:</h4>
+        <div class="payment-select">
+            <label>
+                <input type="radio" name="payment_method" value="cash" checked>
+                <i class="fas fa-money-bill-alt"></i> Efectivo
+            </label>
+            <label>
+                <input type="radio" name="payment_method" value="card">
+                <i class="fas fa-credit-card"></i> Tarjeta
+            </label>
+        </div>
+        <button type="submit" id="checkout-button" {% if not cart_items %}disabled{% endif %}>
+            <i class="fas fa-check-circle"></i> Finalizar Venta
+        </button>
+    </form>
+    <div id="confirmation-area"></div>
+    </div>
+    <head>
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+</head>
 </div>
 
 <script>
@@ -558,6 +582,72 @@
         }
         // Ejecutar al cargar la página para reflejar el estado inicial
         checkCartAndEnableButton();
+    });
+
+    document.body.addEventListener('htmx:afterOnLoad', function(evt) {
+        if (evt.detail.target.id === 'confirmation-area') {
+            document.getElementById('cart-body').innerHTML = '';
+            document.getElementById('total-area').innerHTML = '<i class="fas fa-receipt"></i> Total: $0.00';
+
+            // Disable checkout button
+            const checkoutBtn = document.getElementById('checkout-button');
+            if (checkoutBtn) {
+                checkoutBtn.disabled = true;
+            }
+
+            // 🎯 LIMPIAR EL SELECTOR DE CLIENTE
+            const clientSelect = $('#client-select');
+            if (clientSelect.length) {
+                clientSelect.val(null).trigger('change');
+                $('#client-id-input').val('');
+                $('#client-info').html('Venta registrada como anónima.');
+            }
+        }
+
+        // ... (resto de la lógica) ...
+    });
+
+    // Auto-focus SKU input when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        // ... (Lógica de focus y checkCartAndEnableButton) ...
+
+        // 🎯 LÓGICA DE SELECT2 PARA CLIENTES
+        $('#client-select').select2({
+            placeholder: 'Busca por RUC, ID Fiscal o Nombre...',
+            allowClear: true,
+            dropdownParent: $('.client-association-section'), // Mejora la visualización si hay scroll
+            minimumInputLength: 3,
+            ajax: {
+                url: "{% url 'client_search_ajax' %}", // Endpoint AJAX que creaste en views.py
+                dataType: 'json',
+                delay: 250,
+                data: function (params) {
+                    return {
+                        q: params.term,
+                    };
+                },
+                processResults: function (data) {
+                    return {
+                        results: data.results
+                    };
+                },
+                cache: true
+            }
+        });
+
+        // Evento al seleccionar un cliente
+        $('#client-select').on('select2:select', function (e) {
+            var data = e.params.data;
+            $('#client-id-input').val(data.id);
+            var tag = data.is_professional ? '<span style="color: red; font-weight: 700;"> (PROFESIONAL)</span>' : '';
+            $('#client-info').html('Cliente asociado: <strong>' + data.text + '</strong> | ID Fiscal: ' + data.tax_id + tag);
+        });
+
+        // Evento al deseleccionar (clear) el cliente
+        $('#client-select').on('select2:unselect', function (e) {
+            $('#client-id-input').val('');
+            $('#client-info').html('Venta registrada como anónima.');
+        });
     });
 </script>
 

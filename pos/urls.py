@@ -33,4 +33,9 @@ urlpatterns = [
     # NOTA: La ruta 'inicio/' y la segunda 'add-product/' se han eliminado por duplicación/redundancia.
     path('inventario/alerta-stock/', views.low_inventory_alert_view, name='low_inventory_alert'),
     path('productos/editar/<int:product_id>/', views.product_edit_view, name='product_edit'),
+    path('clientes/', views.client_list_view, name='client_list'),
+    path('clientes/crear/', views.client_create_view, name='client_create'),
+    path('clientes/editar/<int:client_id>/', views.client_edit_view, name='client_edit'),
+    path('clientes/eliminar/<int:client_id>/', views.client_delete_view, name='client_delete'),
+    path('ajax/clientes/buscar/', views.client_search_ajax, name='client_search_ajax'),
 ]

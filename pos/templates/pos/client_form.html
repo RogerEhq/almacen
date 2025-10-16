@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 600px;">
+    <h1>{{ title }}</h1>
+
+    <form method="post" class="mt-4">
+        {% csrf_token %}
+        
+        {# Renderiza los errores del formulario #}
+        {% if form.errors %}
+            <div class="alert alert-danger">
+                <strong>Corrige los siguientes errores:</strong>
+                {{ form.errors }}
+            </div>
+        {% endif %}
+        
+        {# Renderiza el formulario completo con estilos básicos #}
+        {{ form.as_p }}
+
+        <button type="submit" class="btn btn-success">Guardar Cliente</button>
+        <a href="{% url 'client_list' %}" class="btn btn-secondary">Cancelar</a>
+    </form>
+</div>
+{% endblock %}

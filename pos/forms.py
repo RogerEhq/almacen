@@ -1,5 +1,5 @@
 from django import forms
-from .models import Product, Category, Supplier
+from .models import Product, Category, Supplier, Client
 
 
 # Asume que Category y Supplier están en el mismo archivo models.py
@@ -67,4 +67,30 @@ class StockUpdateForm(forms.ModelForm):
         widgets = {
             'stock': forms.NumberInput(attrs={'min': 0, 'class': 'form-control-lg'}),
             'low_stock_threshold': forms.NumberInput(attrs={'min': 0}),
+        }
+
+
+class ClientForm(forms.ModelForm):
+    class Meta:
+        model = Client
+        fields = [
+            'first_name',
+            'last_name',
+            'company_name',
+            'tax_id',
+            'phone',
+            'email',
+            'address',
+            'is_professional'
+        ]
+
+        labels = {
+            'first_name': 'Nombre',
+            'last_name': 'Apellido',
+            'company_name': 'Empresa / Razón Social',
+            'tax_id': 'RUC/NIT/ID Fiscal',
+            'phone': 'Teléfono',
+            'email': 'Email',
+            'address': 'Dirección',
+            'is_professional': 'Cliente Empresarial/Requiere Factura Completa',
         }

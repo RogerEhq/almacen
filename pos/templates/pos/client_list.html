@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block title %}Directorio de Clientes{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>Directorio de Clientes</h1>
+    <a href="{% url 'client_create' %}" class="btn btn-primary">➕ Nuevo Cliente</a>
+
+    <table class="table mt-4">
+        <thead>
+            <tr>
+                <th>RUC/NIT</th>
+                <th>Nombre Completo</th>
+                <th>Empresa</th>
+                <th>Teléfono</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for client in clients %}
+            <tr>
+                <td>{{ client.tax_id }}</td>
+                <td>{{ client.first_name }} {{ client.last_name }}</td>
+                <td>{{ client.company_name|default:"N/A" }}</td>
+                <td>{{ client.phone|default:"N/A" }}</td>
+                <td>
+                    <a href="{% url 'client_edit' client.id %}" class="btn btn-sm btn-info">Editar</a>
+                    <a href="{% url 'client_delete' client.id %}" class="btn btn-sm btn-danger">Eliminar</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
