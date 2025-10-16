@@ -11,10 +11,14 @@ from django.db.models import Sum, Count, Q, ExpressionWrapper, F
 from django.utils import timezone
 from decimal import Decimal
 from django.contrib.auth import logout
+from openpyxl import Workbook
 
 from .models import Product, Sale, SaleItem, CashDrawerSession, Supplier
 from django.db.models.functions import ExtractYear, ExtractMonth
-
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet
 
 # --- Redirección inicial tras login ---
 @login_required
@@ -331,11 +335,13 @@ def dashboard_view(request):
 
     return render(request, 'pos/dashboard.html', context)
 
+
 @user_passes_test(is_admin_staff)
 @login_required
 def sales_report_view(request):
     sales = None
     totals = {}
+    date_range_str = ""
 
     if request.method == 'POST':
         start_date_str = request.POST.get('start_date')
@@ -346,12 +352,22 @@ def sales_report_view(request):
                 start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
                 end_date_inclusive = datetime.strptime(end_date_str, '%Y-%m-%d').date()
 
-                # 🎯 CORRECCIÓN: Usar 'sale_date'
+                date_range_str = f"{start_date_str} a {end_date_str}"
+
                 sales = Sale.objects.filter(
                     sale_date__date__gte=start_date,
                     sale_date__date__lte=end_date_inclusive
-                ).select_related('cash_drawer_session__user').order_by('-sale_date') # 🎯 Y en el ordenamiento
+                ).select_related('cash_drawer_session__user').order_by('-sale_date')
 
+                # NUEVA LÓGICA: Verificar si se solicitó la exportación a Excel
+                if 'export_excel' in request.POST:
+                    return export_sales_excel(request, sales, date_range_str)
+
+                # Lógica ya existente: Verificar si se solicitó la exportación a PDF
+                if 'export_pdf' in request.POST:
+                    return export_sales_pdf(request, sales, date_range_str)
+
+                # El resto del código solo se ejecuta si NO se exporta
                 report_totals = sales.aggregate(
                     total_sales=Sum('total_amount'),
                     total_transactions=Count('id'),
@@ -469,3 +485,137 @@ def monthly_summary_view(request):
     }
 
     return render(request, 'pos/monthly_summary.html', context)
+
+
+def export_sales_pdf(request, sales_queryset, date_range):
+    """
+    Genera un archivo PDF con la lista de ventas proporcionada por el queryset.
+
+    :param sales_queryset: Queryset de objetos Sale (Venta) ya filtrados.
+    :param date_range: Cadena de texto descriptiva del rango de fechas (ej: "2023-01-01 a 2023-01-31").
+    """
+    # 1. Configurar la respuesta HTTP para PDF
+    response = HttpResponse(content_type='application/pdf')
+    # Define el nombre del archivo para la descarga
+    file_name = f"reporte_ventas_{datetime.now().strftime('%Y%m%d')}.pdf"
+    response['Content-Disposition'] = f'attachment; filename="{file_name}"'
+
+    # 2. Crear el objeto SimpleDocTemplate de reportlab
+    # Este objeto gestiona el documento y aplica los datos a la respuesta.
+    doc = SimpleDocTemplate(response, pagesize=letter)
+    elements = []  # Lista de elementos (Párrafos, Tablas, Espacios) a añadir al PDF.
+
+    # Obtener estilos de ejemplo
+    styles = getSampleStyleSheet()
+
+    # 3. Título del Reporte
+    title_text = f"Reporte de Ventas: {date_range}"
+    elements.append(Paragraph(title_text, styles['Heading1']))
+    elements.append(Spacer(1, 18))  # Espacio vertical de 18 puntos
+
+    # 4. Preparar los datos de la tabla
+    # Encabezados de la tabla
+    data = [
+        ['ID Venta', 'Fecha', 'Total ($)', 'Vendedor']
+    ]
+
+    # Llenar la tabla con los datos del queryset
+    for sale in sales_queryset:
+        # Asegúrate de que los campos existan en tu modelo Sale (Venta)
+        data.append([
+            sale.id,
+            sale.sale_date.strftime("%Y-%m-%d %H:%M"),
+            f"{sale.total_amount:.2f}",  # Formato de moneda
+            sale.seller.username if sale.seller else 'N/A'
+        ])
+
+    # 5. Crear la tabla y aplicar estilos
+    table = Table(data, colWidths=[60, 140, 100, 140])
+
+    # Estilos de la tabla
+    style = TableStyle([
+        # Encabezado (primera fila)
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#4361ee')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+
+        # Alineación y Bordes
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),  # Alineación general
+        ('ALIGN', (2, 1), (2, -1), 'RIGHT'),  # Alinea la columna de Total a la derecha
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+    ])
+
+    # Alternar color de fondo en filas de datos para mejor legibilidad
+    row_count = len(data)
+    for i in range(1, row_count):
+        bg_color = colors.white if i % 2 == 0 else colors.HexColor('#f0f0f0')  # Gris claro
+        style.add('BACKGROUND', (0, i), (-1, i), bg_color)
+
+    table.setStyle(style)
+    elements.append(table)
+
+    # 6. Construir y retornar el PDF
+    doc.build(elements)
+
+    return response
+
+
+def export_sales_excel(request, sales_queryset, date_range):
+    """
+    Genera un archivo Excel con la lista de ventas.
+    """
+    # 1. Configurar la respuesta HTTP para Excel
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    )
+    file_name = f"reporte_ventas_{datetime.now().strftime('%Y%m%d')}.xlsx"
+    response['Content-Disposition'] = f'attachment; filename="{file_name}"'
+
+    # 2. Crear Workbook y Hoja
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Reporte de Ventas"
+
+    # 3. Encabezados de la tabla
+    headers = ['ID Venta', 'Fecha y Hora', 'Total ($)', 'Método de Pago', 'Vendedor']
+    ws.append(headers)
+
+    # Estilo de encabezado (opcional, pero mejora la presentación)
+    header_style = ws['A1':'E1']
+    from openpyxl.styles import Font, PatternFill
+    font = Font(bold=True, color="FFFFFF")
+    fill = PatternFill("solid", fgColor="4361ee")
+
+    for cell in header_style[0]:
+        cell.font = font
+        cell.fill = fill
+
+    # 4. Llenar la tabla con los datos
+    for sale in sales_queryset:
+        # Utilizamos el método get_payment_method_display() tal como se usa en el HTML
+        data_row = [
+            sale.id,
+            sale.sale_date.strftime("%Y-%m-%d %H:%M"),
+            sale.total_amount,
+            sale.get_payment_method_display(),
+            sale.cash_drawer_session.user.username if sale.cash_drawer_session and sale.cash_drawer_session.user else 'N/A',
+        ]
+        ws.append(data_row)
+
+    # Ajustar el ancho de las columnas
+    for col in ws.columns:
+        max_length = 0
+        column = col[0].column_letter  # Get the column name
+        for cell in col:
+            try:  # Necessary to avoid error on empty cells
+                if len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            except:
+                pass
+        adjusted_width = (max_length + 2)
+        ws.column_dimensions[column].width = adjusted_width
+
+    # 5. Guardar el Workbook en la respuesta HTTP
+    wb.save(response)
+    return response
