@@ -21,21 +21,16 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
-
-# --- Redirección inicial tras login ---
 @login_required
 def redirect_after_login(request):
-    """Redirige al usuario según si tiene sesión de caja activa."""
     active_session = CashDrawerSession.objects.filter(user=request.user, end_time__isnull=True).first()
     if active_session:
         return redirect('pos_main')
     return redirect('open_session')
 
 
-# --- Vistas de Caja ---
 @login_required
 def open_session_view(request):
-    """Vista para iniciar un turno de caja (HU #6)."""
     active_session = CashDrawerSession.objects.filter(user=request.user, end_time__isnull=True).first()
     if active_session:
         return redirect('pos_main')
@@ -57,29 +52,22 @@ def open_session_view(request):
 
 @login_required
 def close_session_view(request):
-    """Vista para cerrar el turno de caja (HU #6)."""
-    # ... (Se mantiene la lógica para encontrar la sesión activa) ...
     active_session = CashDrawerSession.objects.filter(user=request.user, end_time__isnull=True).first()
     if not active_session:
         return redirect('pos_main')
 
-    # 1. Se calcula el total de ventas en efectivo
     cash_sales = active_session.sales.filter(payment_method='cash').aggregate(total_sum=Sum('total_amount'))[
                      'total_sum'] or Decimal('0.00')
 
-    # 2. Se calcula el total de ventas con tarjeta (solo referencia)
     card_sales = active_session.sales.filter(payment_method='card').aggregate(total_sum=Sum('total_amount'))[
                      'total_sum'] or Decimal('0.00')
-
-    # ✅ CORRECCIÓN CLAVE: El total esperado es SOLO las ventas en efectivo.
-    # El fondo inicial se mantiene separado para que el cajero lo retire.
     expected_balance = cash_sales
 
     context = {
         'session': active_session,
         'cash_sales': cash_sales,
         'card_sales': card_sales,
-        'expected_balance': expected_balance,  # Este valor ahora es igual a cash_sales
+        'expected_balance': expected_balance,
     }
 
     if request.method == 'POST':
@@ -99,12 +87,8 @@ def close_session_view(request):
         return redirect('login')
 
     return render(request, 'pos/close_session.html', context)
-
-
-# --- Vista principal del POS ---
 @login_required
 def pos_view(request):
-    """Vista principal del POS."""
     cart_items = request.session.get('cart', {})
     cart_total = sum(item['subtotal'] for item in cart_items.values())
 
@@ -118,11 +102,9 @@ def pos_view(request):
     return render(request, 'pos/pos_main.html', context)
 
 
-# --- Añadir producto al carrito ---
 @login_required
 @require_POST
 def add_product_view(request):
-    """Lógica HTMX: Añadir/incrementar producto con validación de Stock y actualizar total."""
     sku = request.POST.get('sku', '').strip()
 
     try:
@@ -167,7 +149,6 @@ def add_product_view(request):
     return render(request, 'pos/cart_row_and_total.html', context)
 
 
-# --- Finalizar venta ---
 @login_required
 @require_POST
 @transaction.atomic
@@ -175,17 +156,13 @@ def checkout_view(request):
     cart = request.session.get('cart', {})
     payment_method = request.POST.get('payment_method', 'cash')
 
-    # 🎯 NUEVO: Lógica para recuperar el Cliente (Comprador)
     client_id = request.POST.get('client_id')
     client_instance = None
     if client_id:
         try:
-            # Buscar la instancia del cliente por el ID enviado desde el POS
             client_instance = Client.objects.get(id=client_id)
         except Client.DoesNotExist:
-            # Si el cliente no se encuentra (ID inválido), se ignora.
             pass
-    # FIN: Lógica para recuperar el Cliente
 
     if not cart:
         return HttpResponse('<p style="color:red;">No hay productos en el carrito.</p>')
@@ -226,7 +203,6 @@ def checkout_view(request):
             total_amount=cart_total,
             cash_drawer_session=active_session,
             payment_method=payment_method,
-            # 🎯 CAMBIO CLAVE: Se asigna la instancia del cliente
             client=client_instance
         )
 
@@ -240,7 +216,6 @@ def checkout_view(request):
             ) for item in sale_items_to_create
         ])
 
-        # Actualizar el balance de caja si el pago fue en efectivo
         if payment_method == 'cash':
             active_session.starting_balance += cart_total
             active_session.save()
@@ -271,48 +246,31 @@ def checkout_view(request):
 
 @login_required
 def get_cart_total_view(request):
-    """Calcula el total del carrito y devuelve solo el fragmento del total para HTMX."""
     cart_items = request.session.get('cart', {})
     cart_total = sum(item['subtotal'] for item in cart_items.values())
 
     context = {'cart_total': cart_total}
-    # Renderiza un fragmento HTML con el nuevo total
     return render(request, 'pos/total_fragment.html', context)
 
 
 def is_admin_staff(user):
-    """Verifica si el usuario es administrador o superusuario."""
     return user.is_staff or user.is_superuser
 
-
-# ----------------------------------------------------
-# B. Tarea 1: Despacho por Rol (HU #14)
-# ----------------------------------------------------
 
 @login_required
 def home_dispatch_view(request):
     if is_admin_staff(request.user):
-        # 1. ADMIN: Va al dashboard
         return redirect('dashboard')
     else:
-        # 2. VENDEDOR: Chequeo de caja (Lógica del HU #11/Sprint 3)
         active_session = CashDrawerSession.objects.filter(
             user=request.user,
             end_time__isnull=True
         ).first()
 
         if active_session:
-            # Sesión activa: va al POS
             return redirect('pos_main')
         else:
-            # Sesión inactiva: va a abrir caja
             return redirect('open_session')
-
-    # ----------------------------------------------------
-
-
-# C. Tarea 2: Dashboard y Top Productos (HU #8 y #13)
-# ----------------------------------------------------
 
 def is_admin_staff(user):
     return user.is_staff or user.is_superuser
@@ -323,7 +281,6 @@ def is_admin_staff(user):
 def dashboard_view(request):
     today = timezone.now().date()
 
-    # Filtramos las ventas para hoy (asumiendo que 'sale_date' es un campo DateTimeField o DateField)
     today_sales = Sale.objects.filter(sale_date__date=today)
 
     today_metrics = today_sales.aggregate(
@@ -337,13 +294,10 @@ def dashboard_view(request):
 
     active_sessions = CashDrawerSession.objects.filter(end_time__isnull=True).count()
 
-    # ✅ CORRECCIÓN FINAL (en la vista): Se elimina el alias product_name= para evitar el TypeError.
     top_products = SaleItem.objects.values('product__name') \
                        .annotate(total_sold=Sum('quantity')) \
                        .order_by('-total_sold')[:5]
 
-    # 🎯 NUEVA LÓGICA: Contar productos con inventario bajo (HU #16)
-    # Filtra los productos donde el stock actual es menor o igual al umbral definido.
     low_stock_count = Product.objects.filter(
         stock__lte=F('low_stock_threshold')
     ).count()
@@ -354,7 +308,7 @@ def dashboard_view(request):
         'ticket_promedio': ticket_average,
         'sesiones_activas': active_sessions,
         'top_products': top_products,
-        'low_stock_count': low_stock_count,  # <<-- Se añade el conteo al contexto
+        'low_stock_count': low_stock_count,
     }
 
     return render(request, 'pos/dashboard.html', context)
@@ -383,15 +337,12 @@ def sales_report_view(request):
                     sale_date__date__lte=end_date_inclusive
                 ).select_related('cash_drawer_session__user').order_by('-sale_date')
 
-                # NUEVA LÓGICA: Verificar si se solicitó la exportación a Excel
                 if 'export_excel' in request.POST:
                     return export_sales_excel(request, sales, date_range_str)
 
-                # Lógica ya existente: Verificar si se solicitó la exportación a PDF
                 if 'export_pdf' in request.POST:
                     return export_sales_pdf(request, sales, date_range_str)
 
-                # El resto del código solo se ejecuta si NO se exporta
                 report_totals = sales.aggregate(
                     total_sales=Sum('total_amount'),
                     total_transactions=Count('id'),
@@ -418,22 +369,15 @@ def sales_report_view(request):
     return render(request, 'pos/sales_report.html', context)
 
 
-# --- 1. Lista de Productos con Stock Bajo ---
 @user_passes_test(is_admin_staff)
 @login_required
 def product_list_view(request):
-    """Muestra una lista paginada de productos con opciones de filtro."""
-
-    # Parámetros de filtro
     filter_by = request.GET.get('filter', 'all')
 
     products = Product.objects.select_related('category', 'supplier').all()
 
     if filter_by == 'low_stock':
-        # Asumiendo que 'low_stock' se define como 5 unidades o menos
         products = products.filter(stock__lte=5)
-
-    # Puedes implementar paginación aquí si la lista es muy grande
 
     context = {
         'products': products,
@@ -444,24 +388,16 @@ def product_list_view(request):
     return render(request, 'pos/product_list.html', context)
 
 
-# --- 2. Inventario por Proveedor ---
 @user_passes_test(is_admin_staff)
 @login_required
 def supplier_inventory_view(request, supplier_id):
-    """Muestra los productos de un proveedor específico."""
-
-    # Asume que el modelo Supplier está importado
     supplier = get_object_or_404(Supplier, pk=supplier_id)
 
-    # 1. Traer todos los productos del proveedor
-    # No usamos ninguna anotación o expresión compleja aquí.
     products = Product.objects.filter(supplier=supplier).select_related('category')
 
     total_stock_value = Decimal('0.00')
 
-    # 2. ✅ SOLUCIÓN: Calcular el valor total del stock en Python.
     for product in products:
-        # Multiplicar Costo (Decimal) por Stock (convertido a Decimal)
         product_stock = Decimal(product.stock)
         total_stock_value += product.cost * product_stock
 
@@ -473,14 +409,9 @@ def supplier_inventory_view(request, supplier_id):
 
     return render(request, 'pos/supplier_inventory.html', context)
 
-
-# --- 3. Resumen de Ventas Mensuales ---
 @user_passes_test(is_admin_staff)
 @login_required
 def monthly_summary_view(request):
-    """Muestra un resumen de ventas totales agrupadas por mes."""
-
-    # Agrupa las ventas por año y mes
     monthly_sales = Sale.objects.annotate(
         year=ExtractYear('sale_date'),
         month=ExtractMonth('sale_date')
@@ -489,15 +420,12 @@ def monthly_summary_view(request):
         total_transactions=Count('id')
     ).order_by('-year', '-month')
 
-    # ✅ CORRECCIÓN CLAVE: Calcular el ticket promedio en Python
     sales_with_average = []
     for summary in monthly_sales:
         num_transactions = summary['total_transactions']
         total_amount = summary['total_amount']
 
-        # Manejo seguro de la división por cero
         if num_transactions and total_amount:
-            # Usar Decimal para mantener la precisión financiera
             summary['ticket_promedio'] = total_amount / Decimal(num_transactions)
         else:
             summary['ticket_promedio'] = Decimal('0.00')
@@ -512,101 +440,84 @@ def monthly_summary_view(request):
 
 
 def export_sales_pdf(request, sales_queryset, date_range):
-    """
-    Genera un archivo PDF con la lista de ventas proporcionada por el queryset.
 
-    :param sales_queryset: Queryset de objetos Sale (Venta) ya filtrados.
-    :param date_range: Cadena de texto descriptiva del rango de fechas (ej: "2023-01-01 a 2023-01-31").
-    """
-    # 1. Configurar la respuesta HTTP para PDF
     response = HttpResponse(content_type='application/pdf')
-    # Define el nombre del archivo para la descarga
     file_name = f"reporte_ventas_{datetime.now().strftime('%Y%m%d')}.pdf"
     response['Content-Disposition'] = f'attachment; filename="{file_name}"'
 
-    # 2. Crear el objeto SimpleDocTemplate de reportlab
-    # Este objeto gestiona el documento y aplica los datos a la respuesta.
     doc = SimpleDocTemplate(response, pagesize=letter)
-    elements = []  # Lista de elementos (Párrafos, Tablas, Espacios) a añadir al PDF.
-
-    # Obtener estilos de ejemplo
+    elements = []
     styles = getSampleStyleSheet()
 
-    # 3. Título del Reporte
     title_text = f"Reporte de Ventas: {date_range}"
     elements.append(Paragraph(title_text, styles['Heading1']))
-    elements.append(Spacer(1, 18))  # Espacio vertical de 18 puntos
+    elements.append(Spacer(1, 18))
 
-    # 4. Preparar los datos de la tabla
-    # Encabezados de la tabla
     data = [
-        ['ID Venta', 'Fecha', 'Total ($)', 'Vendedor']
+        ['ID Venta', 'Fecha', 'Total ($)', 'Vendedor', 'Comprador']
     ]
 
-    # Llenar la tabla con los datos del queryset
     for sale in sales_queryset:
-        # Asegúrate de que los campos existan en tu modelo Sale (Venta)
+        vendedor_nombre = (
+            sale.cash_drawer_session.user.username
+            if sale.cash_drawer_session and sale.cash_drawer_session.user
+            else 'N/A'
+        )
+
+        if sale.client:
+            comprador_nombre = str(sale.client)
+        else:
+            comprador_nombre = "Consumidor Final"
+
         data.append([
             sale.id,
             sale.sale_date.strftime("%Y-%m-%d %H:%M"),
-            f"{sale.total_amount:.2f}",  # Formato de moneda
-            sale.seller.username if sale.seller else 'N/A'
+            f"{sale.total_amount:.2f}",
+            vendedor_nombre,
+            comprador_nombre,
         ])
 
-    # 5. Crear la tabla y aplicar estilos
-    table = Table(data, colWidths=[60, 140, 100, 140])
+    table = Table(data, colWidths=[60, 140, 80, 100, 120])
 
-    # Estilos de la tabla
     style = TableStyle([
-        # Encabezado (primera fila)
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#4361ee')),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
         ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
 
-        # Alineación y Bordes
-        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),  # Alineación general
-        ('ALIGN', (2, 1), (2, -1), 'RIGHT'),  # Alinea la columna de Total a la derecha
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('ALIGN', (2, 1), (2, -1), 'RIGHT'),
         ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
     ])
 
-    # Alternar color de fondo en filas de datos para mejor legibilidad
     row_count = len(data)
     for i in range(1, row_count):
-        bg_color = colors.white if i % 2 == 0 else colors.HexColor('#f0f0f0')  # Gris claro
+        bg_color = colors.white if i % 2 == 0 else colors.HexColor('#f0f0f0')
         style.add('BACKGROUND', (0, i), (-1, i), bg_color)
 
     table.setStyle(style)
     elements.append(table)
 
-    # 6. Construir y retornar el PDF
     doc.build(elements)
 
     return response
 
 
 def export_sales_excel(request, sales_queryset, date_range):
-    """
-    Genera un archivo Excel con la lista de ventas.
-    """
-    # 1. Configurar la respuesta HTTP para Excel
     response = HttpResponse(
         content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     )
     file_name = f"reporte_ventas_{datetime.now().strftime('%Y%m%d')}.xlsx"
     response['Content-Disposition'] = f'attachment; filename="{file_name}"'
 
-    # 2. Crear Workbook y Hoja
     wb = Workbook()
     ws = wb.active
     ws.title = "Reporte de Ventas"
 
-    # 3. Encabezados de la tabla
-    headers = ['ID Venta', 'Fecha y Hora', 'Total ($)', 'Método de Pago', 'Vendedor']
+    headers = ['ID Venta', 'Fecha y Hora', 'Total ($)', 'Método de Pago', 'Vendedor', 'Comprador']
     ws.append(headers)
 
-    # Estilo de encabezado (opcional, pero mejora la presentación)
-    header_style = ws['A1':'E1']
+    header_style = ws['A1':'F1']
     from openpyxl.styles import Font, PatternFill
     font = Font(bold=True, color="FFFFFF")
     fill = PatternFill("solid", fgColor="4361ee")
@@ -615,24 +526,27 @@ def export_sales_excel(request, sales_queryset, date_range):
         cell.font = font
         cell.fill = fill
 
-    # 4. Llenar la tabla con los datos
     for sale in sales_queryset:
-        # Utilizamos el método get_payment_method_display() tal como se usa en el HTML
+        if sale.client:
+            comprador_nombre = str(sale.client)
+        else:
+            comprador_nombre = "Consumidor Final"
+
         data_row = [
             sale.id,
             sale.sale_date.strftime("%Y-%m-%d %H:%M"),
             sale.total_amount,
             sale.get_payment_method_display(),
             sale.cash_drawer_session.user.username if sale.cash_drawer_session and sale.cash_drawer_session.user else 'N/A',
+            comprador_nombre,
         ]
         ws.append(data_row)
 
-    # Ajustar el ancho de las columnas
     for col in ws.columns:
         max_length = 0
-        column = col[0].column_letter  # Get the column name
+        column = col[0].column_letter
         for cell in col:
-            try:  # Necessary to avoid error on empty cells
+            try:
                 if len(str(cell.value)) > max_length:
                     max_length = len(str(cell.value))
             except:
@@ -640,7 +554,6 @@ def export_sales_excel(request, sales_queryset, date_range):
         adjusted_width = (max_length + 2)
         ws.column_dimensions[column].width = adjusted_width
 
-    # 5. Guardar el Workbook en la respuesta HTTP
     wb.save(response)
     return response
 
@@ -648,10 +561,6 @@ def export_sales_excel(request, sales_queryset, date_range):
 @user_passes_test(is_admin_staff)
 @login_required
 def low_inventory_alert_view(request):
-    """
-    Muestra la lista de productos cuyo stock es bajo.
-    """
-    # El filtro ahora funciona correctamente porque F está importado desde django.db.models
     low_stock_products = Product.objects.filter(
         stock__lte=F('low_stock_threshold')
     ).order_by('stock')
@@ -663,32 +572,24 @@ def low_inventory_alert_view(request):
 
     return render(request, 'pos/low_inventory_alert.html', context)
 
-
 @user_passes_test(is_admin_staff)
 @login_required
 def product_edit_view(request, product_id):
     product = get_object_or_404(Product, id=product_id)
 
     if request.method == 'POST':
-        # 🎯 Usamos el formulario ligero aquí
         form = StockUpdateForm(request.POST, instance=product)
         if form.is_valid():
             form.save()
-            # Opcional: Agregar mensaje de éxito
-            # messages.success(request, f"Stock de {product.name} actualizado con éxito.")
             return redirect('low_inventory_alert')
     else:
-        # 🎯 Usamos el formulario ligero para mostrar
         form = StockUpdateForm(instance=product)
 
-    # Cambiamos el nombre del template si vas a crear uno nuevo,
-    # pero si solo quieres modificar el actual, lo mantienes.
     return render(request, 'pos/product_form.html', {'form': form, 'product': product})
 
 
 @login_required
 def client_list_view(request):
-    """Muestra una lista de todos los clientes."""
     clients = Client.objects.all().order_by('last_name')
     context = {'clients': clients}
     return render(request, 'pos/client_list.html', context)
@@ -697,12 +598,10 @@ def client_list_view(request):
 
 @login_required
 def client_create_view(request):
-    """Permite crear un nuevo cliente."""
     if request.method == 'POST':
         form = ClientForm(request.POST)
         if form.is_valid():
             form.save()
-            # messages.success(request, "Cliente creado con éxito.")
             return redirect('client_list')
     else:
         form = ClientForm()
@@ -713,14 +612,12 @@ def client_create_view(request):
 
 @login_required
 def client_edit_view(request, client_id):
-    """Permite editar un cliente existente."""
     client = get_object_or_404(Client, id=client_id)
 
     if request.method == 'POST':
         form = ClientForm(request.POST, instance=client)
         if form.is_valid():
             form.save()
-            # messages.success(request, "Cliente actualizado con éxito.")
             return redirect('client_list')
     else:
         form = ClientForm(instance=client)
@@ -731,12 +628,10 @@ def client_edit_view(request, client_id):
 
 @login_required
 def client_delete_view(request, client_id):
-    """Permite eliminar un cliente."""
     client = get_object_or_404(Client, id=client_id)
 
     if request.method == 'POST':
         client.delete()
-        # messages.warning(request, "Cliente eliminado.")
         return redirect('client_list')
 
     context = {'client': client}
@@ -745,25 +640,21 @@ def client_delete_view(request, client_id):
 
 @login_required
 def client_search_ajax(request):
-    """
-    Endpoint AJAX para buscar clientes por nombre, empresa o RUC/NIT.
-    """
     query = request.GET.get('q', '')
     clients_data = []
 
     if query:
-        # Busca clientes cuyo nombre, apellido, empresa o tax_id contenga la consulta
         clients = Client.objects.filter(
             Q(first_name__icontains=query) |
             Q(last_name__icontains=query) |
             Q(company_name__icontains=query) |
             Q(tax_id__icontains=query)
-        ).distinct()[:10]  # Limitar a 10 resultados para velocidad
+        ).distinct()[:10]
 
         for client in clients:
             clients_data.append({
                 'id': client.id,
-                'text': str(client),  # Utiliza el __str__ definido en el modelo
+                'text': str(client),
                 'tax_id': client.tax_id,
                 'is_professional': client.is_professional
             })
@@ -774,20 +665,17 @@ def client_search_ajax(request):
 @login_required
 @require_http_methods(["GET", "POST"])
 def return_search_view(request):
-    """Página para buscar una venta por ID y mostrar los detalles."""
     sale = None
     if request.method == 'POST':
         sale_id = request.POST.get('sale_id')
         if sale_id:
             try:
-                # 🎯 CORRECCIÓN: Eliminamos prefetch_related aquí
                 sale = Sale.objects.get(id=sale_id)
             except Sale.DoesNotExist:
                 return render(request, 'pos/return_search.html', {
                     'error': f'No se encontró la venta con ID: {escape(sale_id)}.'
                 })
 
-            # Redirigir a la página de proceso con el ID de venta
             return redirect('process_return', sale_id=sale.id)
 
     return render(request, 'pos/return_search.html', {})
@@ -797,56 +685,39 @@ def return_search_view(request):
 @require_http_methods(["GET", "POST"])
 @transaction.atomic
 def process_return_view(request, sale_id):
-    """Página para seleccionar productos a devolver y procesar la devolución."""
-
-    # 1. Obtener la venta y sus ítems
-    # 🎯 CORRECCIÓN CLAVE: Cambiado 'saleitem_set__product' por 'items__product'
     sale = get_object_or_404(
         Sale.objects.prefetch_related('items__product'),
         id=sale_id
     )
-
     if request.method == 'POST':
-        # 2. Inicializar contadores
         items_to_return = []
         total_refund = Decimal('0.00')
         motive = request.POST.get('motive', 'Devolución sin motivo especificado')
-
-        # 3. Procesar los datos del formulario
-        # 🎯 CORRECCIÓN: Cambiado sale.saleitem_set.all() por sale.items.all()
         for item in sale.items.all():
             return_qty_str = request.POST.get(f'qty_{item.id}')
-
             try:
                 return_qty = int(return_qty_str) if return_qty_str else 0
             except ValueError:
-                # Manejar entrada inválida
                 return HttpResponse(
                     f'<p style="color:red;">Cantidad inválida para el producto {escape(item.product.name)}.</p>',
                     status=400)
-
-            # Validación: La cantidad devuelta no puede ser mayor a la cantidad original
             if return_qty > item.quantity:
                 return HttpResponse(
                     f'<p style="color:red;">No se puede devolver más de lo que se compró para {escape(item.product.name)}.</p>',
                     status=400)
-
             if return_qty > 0:
-                # Calcular el monto de reembolso para este artículo
                 refund_amount = item.unit_price * return_qty
                 total_refund += refund_amount
-
                 items_to_return.append({
                     'item': item,
                     'quantity': return_qty,
                     'refund_amount': refund_amount
                 })
-
         if not items_to_return:
             return HttpResponse('<p style="color:red;">Debe seleccionar al menos un producto para devolver.</p>',
                                 status=400)
 
-        # 4. Crear el objeto SaleReturn
+        # 1. Crear el registro de devolución (SaleReturn)
         sale_return = SaleReturn.objects.create(
             original_sale=sale,
             returned_by=request.user,
@@ -854,32 +725,54 @@ def process_return_view(request, sale_id):
             total_refund_amount=total_refund
         )
 
-        # 5. Crear los objetos SaleReturnItem e incrementar el stock
+        # 2. Revertir stock y crear SaleReturnItems
         for data in items_to_return:
             item = data['item']
-
             SaleReturnItem.objects.create(
                 return_request=sale_return,
                 product=item.product,
                 quantity=data['quantity'],
                 refund_amount=data['refund_amount']
             )
-
-            # Incrementar el stock
             product = Product.objects.get(pk=item.product.pk)
             product.stock += data['quantity']
             product.save()
 
-        # 6. Éxito: Generar mensaje de confirmación
+        # =================================================================
+        # MODIFICACIÓN CLAVE: Usar la sesión de caja de la venta original
+        # =================================================================
+
+        # Usamos la sesión de la venta original. Si la venta original no tiene sesión (lo cual es raro),
+        # usamos la sesión activa actual como fallback, aunque lo ideal es que sale.cash_drawer_session exista.
+        session_to_use = sale.cash_drawer_session
+
+        # A. Crear una transacción de VENTA con monto NEGATIVO para compensar las métricas
+        Sale.objects.create(
+            seller=request.user,
+            total_amount=-total_refund,
+            # Se usa la sesión de la VENTA ORIGINAL para asegurar que no sea NULL
+            cash_drawer_session=session_to_use,
+            payment_method='return',
+            client=sale.client,
+        )
+
+        # B. Actualizar el balance de caja (si el pago original fue en efectivo y tenemos una sesión)
+        if sale.payment_method == 'cash' and session_to_use:
+            # Si el pago original fue en efectivo, el dinero de la devolución se saca de la caja
+            # Si la sesión usada es la original, esta podría estar cerrada.
+            # Es más seguro usar la sesión activa del usuario para actualizar el balance de caja si aún está abierta.
+            active_session = CashDrawerSession.objects.filter(user=request.user, end_time__isnull=True).first()
+            if active_session:
+                active_session.starting_balance -= total_refund
+                active_session.save()
+        # =================================================================
+
         return render(request, 'pos/return_success.html', {
             'sale_return': sale_return,
             'items_returned': items_to_return
         })
-
-    # GET request: Mostrar el formulario de devolución
     context = {
         'sale': sale,
-        # 🎯 CORRECCIÓN: Cambiado sale.saleitem_set.all() por sale.items.all()
         'sale_items': sale.items.all(),
     }
     return render(request, 'pos/process_return.html', context)

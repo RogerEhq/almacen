@@ -1,20 +1,17 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.conf import settings
-# Sprint 2: Modelos de Soporte
+
 class Category(models.Model):
     name = models.CharField(max_length=100, verbose_name="Nombre")
 
     def __str__(self): return self.name
-
 
 class Supplier(models.Model):
     name = models.CharField(max_length=150, verbose_name="Nombre del Proveedor")
 
     def __str__(self): return self.name
 
-
-# Sprint 2: Modelo Producto Extendido
 class Product(models.Model):
     name = models.CharField(max_length=200, verbose_name="Nombre")
     sku = models.CharField(max_length=100, unique=True, verbose_name="SKU / Código")
@@ -30,8 +27,6 @@ class Product(models.Model):
     )
     def __str__(self): return self.name
 
-
-# Sprint 3: Modelo Sesión de Caja
 class CashDrawerSession(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name="Cajero")
     start_time = models.DateTimeField(auto_now_add=True, verbose_name="Hora de Apertura")
@@ -48,13 +43,9 @@ class CashDrawerSession(models.Model):
 
 # Sprint 3: Modelo Venta
 class Sale(models.Model):
-    # Usamos 'sale_date' como campo principal, que en el error anterior era 'fecha_de_venta'
     sale_date = models.DateTimeField(auto_now_add=True)
     total_amount = models.DecimalField(max_digits=10, decimal_places=2)
-    # Si estás usando la configuración estándar de Django, 'User' es correcto.
     seller = models.ForeignKey(User, on_delete=models.CASCADE)
-
-    # Vínculo a la Sesión de Caja (HU #6)
     cash_drawer_session = models.ForeignKey(CashDrawerSession, on_delete=models.PROTECT, related_name='sales',
                                             verbose_name="Turno de Caja")
     client = models.ForeignKey(
@@ -64,7 +55,6 @@ class Sale(models.Model):
         blank=True,
         verbose_name="Cliente Asociado"
     )
-    # Múltiples Métodos de Pago (HU #5)
     PAYMENT_METHOD_CHOICES = [
         ('cash', 'Efectivo'),
         ('card', 'Tarjeta'),
@@ -75,17 +65,12 @@ class Sale(models.Model):
     def __str__(self):
         return f"Venta #{self.id} - Total: ${self.total_amount}"
 
-
-# Sprint 1: Modelo Ítem de Venta
 class SaleItem(models.Model):
-    # 🎯 CORRECCIÓN CLAVE: Usamos la cadena 'Sale' para evitar el error E300.
     sale = models.ForeignKey('Sale', related_name='items', on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     quantity = models.IntegerField(default=1)
     unit_price = models.DecimalField(max_digits=10, decimal_places=2)
     subtotal = models.DecimalField(max_digits=10, decimal_places=2)
-
-    # Campo para guardar el nombre del producto en el momento de la venta (para reportes)
     product_name = models.CharField(max_length=200, default='N/A')
 
     def __str__(self):
@@ -101,8 +86,6 @@ class Client(models.Model):
     phone = models.CharField(max_length=20, verbose_name="Teléfono", blank=True, null=True)
     email = models.EmailField(verbose_name="Email", blank=True, null=True)
     address = models.CharField(max_length=255, verbose_name="Dirección de Facturación", blank=True, null=True)
-
-    # Campo para identificar clientes que requieren factura formal
     is_professional = models.BooleanField(default=False, verbose_name="Cliente Profesional/Empresa")
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -113,14 +96,12 @@ class Client(models.Model):
         ordering = ['last_name', 'first_name']
 
     def __str__(self):
-        # Muestra el nombre completo o la empresa si existe
         if self.company_name:
             return f"{self.company_name} ({self.tax_id})"
         return f"{self.first_name} {self.last_name or ''}"
 
 
 class SaleReturn(models.Model):
-    """Modelo para registrar una solicitud de devolución completa."""
     original_sale = models.ForeignKey(
         'Sale',
         on_delete=models.CASCADE,
